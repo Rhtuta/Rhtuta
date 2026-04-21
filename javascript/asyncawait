@@ -1,0 +1,52 @@
+async function wait3sec() {
+    console.log("waiting 3 seconds");
+
+    await new Promise((resolve) => setTimeout(resolve,1000));
+ //will make promise & resolve it in 3 sec meantime next inst will run like it will run 'end' here then 'done waiting' 
+    console.log("done waiting");
+    
+}
+
+console.log("start");
+wait3sec();
+console.log("end");
+
+
+function getUserData(){
+    console.log("waiting for 3 seconds");
+
+    return new Promise((resolve, reject) => {
+        setTimeout(() =>{
+            const data = {
+                name: "Rohit Kumar",
+                age: 30
+            }
+            resolve(data);
+        }),3000
+    });
+//will make promise & resolve it in 3 sec meantime next inst will run like it will run 'end' here then, 'done waiting' 
+    
+}
+console.log("start");
+
+getUserData().then((data) =>{
+    console.log("fetched data:" , data);
+    
+})
+.catch((error)=>{
+    console.log("fetched error: ", error);
+    
+})
+
+console.log("end");
+
+
+
+
+
+
+
+
+
+
+

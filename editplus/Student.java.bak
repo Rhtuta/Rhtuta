@@ -1,0 +1,36 @@
+class Student 
+{
+	String name = "Rohit";
+	int age = 20;
+	static String course = "IT";
+	public static void main(String[] args) 
+	{
+		System.out.println("---------obj 1 ------------");
+		Student s = new Student();
+		System.out.println("name: "+s.name);
+		System.out.println("age: "+s.age);
+		System.out.println("course: "+course); // no object needed
+		System.out.println("course: "+s.course); // can also use with object, all have same M
+		System.out.println("course: "+Student.course); // can also use with class name
+                                                       // due to static have same memory aloc
+		System.out.println("---------obj 2 ------------");
+		Student s1 = new Student();
+		s1.name = "Rahul"; // make another copy of object and change its value
+		s1.age = 22;
+		s1.course = "CS";  // not change due to single copy
+		System.out.println("name: "+s1.name); 
+		System.out.println("age: "+s1.age);
+		System.out.println("course: "+s.course);
+		System.out.println("course: "+s1.course);
+		
+		System.out.println("---------user defined method local content in static method using object ------------");
+		s.display();
+		
+	}
+	   // System.out.println("---------inside user defined method ------------");
+		public void display()
+		{
+			String name = "Rohan";
+			System.out.println("name: "+name);
+		}
+}

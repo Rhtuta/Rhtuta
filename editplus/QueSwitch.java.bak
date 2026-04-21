@@ -1,0 +1,56 @@
+import java.util.Scanner;
+class QueSwitch 
+{
+	public static void main(String[] args) 
+	{
+		System.out.println("1: One");
+		System.out.println("2: Two");
+		System.out.println("3: Three");
+		System.out.println("4: Four");
+		System.out.println("5: Five");
+		System.out.println("6: Six");
+		System.out.println("7: Seven");
+		System.out.println("8: Eight");
+		System.out.println("9: Nine");
+		
+		System.out.println("Enter your Choice:- Ex:2  ");
+		Scanner sc = new Scanner(System.in);
+		int choice = sc.nextLine();
+		
+		switch(choice)
+		{
+			case 1: 
+				System.out.println("One");
+			    break;
+			case 2: 
+				System.out.println("Two");
+			    break;
+			case 3: 
+				System.out.println("Three");
+			    break;
+			case 4: 
+				System.out.println("Four");
+			    break;
+			case 5: 
+				System.out.println("Five");
+			    break;
+			case 6: 
+				System.out.println("Six");
+			    break;
+			case 7: 
+				System.out.println("Seven");
+			    break;
+			case 8: 
+				System.out.println("Eight");
+			    break;
+			case 9: 
+				System.out.println("Nine");
+			    break;
+			default:
+				System.out.println("choice not exist");
+				
+			
+		}
+		
+	}
+}

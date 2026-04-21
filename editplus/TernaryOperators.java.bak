@@ -1,0 +1,9 @@
+class TernaryOperators 
+{
+	public static void main(String[] args) 
+	{
+		int marks = 32;
+		String res = (marks>=33) ? "pass" : "fail";  //Condition? true:false;
+		System.out.println(res);
+	}
+}

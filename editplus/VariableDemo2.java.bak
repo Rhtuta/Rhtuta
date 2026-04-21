@@ -1,0 +1,35 @@
+class VariableDemo2 
+{
+	public static void main(String[] args) 
+	{
+		//Integers types
+		byte age=20;
+		short year=2004;
+		int salary=10000;
+		long req=549624624596L;
+		
+		
+		//Floating types
+		float pymt=2000.25f
+	    double bigpay=25652126345.3235
+	    
+		//Character type
+		char grade='A';
+		
+		
+		//boolean type
+		boolean flag=true;
+		
+		System.out.println("Age= "+age);
+		System.out.println("Year= "+year);
+		System.out.println("Salary= "+salary);
+		System.out.println("Request= "+req);
+		System.out.println("Payment= "+pymt);
+		System.out.println("Bigpay= "+bigpay);
+		System.out.println("Grade= "+grade);
+		System.out.println("Flag= "+flag);
+		
+		
+		
+	}
+}

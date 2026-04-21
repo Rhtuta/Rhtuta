@@ -1,0 +1,106 @@
+import java.util.Scanner;
+class CountNum 
+{
+	Scanner sc = new Scanner(System.in);
+	public static void main(String[] args) 
+	{
+		
+		CountNum s = new CountNum();
+		s.count();
+		System.out.println(s.areaTri(5,20));
+		s.countryCapital();
+		System.out.println("Rohit your bill is : "+s.calculateBill(100,50,70,50,80));
+		System.out.println(s.StringReturnDemo());
+		s.calculator();
+	}
+	public void count()
+	{
+		for(int i=1; i<=10; i++)
+		{
+			System.out.println(i);
+		}
+	}
+	public int areaTri(int b, int h)
+	{
+		return b*h/2;
+		
+	}
+	public void countryCapital()
+	{
+		String capital = "not input country from given list";
+		//String capital;
+		System.out.println("list of Countries");
+		System.out.println("India");
+		System.out.println("Pakistan");
+		System.out.println("Nepal");
+		System.out.println("South korea");
+		System.out.println("China");
+		System.out.println("Enter Country name to know their Capital: ");
+		String country = sc.nextLine();
+		switch (country)
+		{
+		case "India":
+			capital = "New Delhi";
+		    //System.out.println(capital);
+		    break;
+		case "Pakistan":
+			capital = "Islamabad";
+		    break;
+		case "Nepal":
+			capital = "Kathmandu";
+		    break;
+		case "South Korea":
+			capital = "Soul";
+		    break;
+		case "China":
+			capital = "bejing";
+		    break;
+		default:
+			System.out.println("not exists");
+            
+		}
+		System.out.println(capital);
+	}
+	
+	public int calculateBill(int paneer, int roti, int salad, int dalMakhni, int coldDrink)
+	{
+		return paneer + roti + salad + dalMakhni + coldDrink;
+		
+	}
+	public String StringReturnDemo()
+	{
+		return "Returned a string";
+	}
+	public void calculator()
+	{
+		System.out.println("Press 1 for Addition");
+		System.out.println("Press 2 for Subtraction");
+		System.out.println("Press 3 for Multplication");
+		System.out.println("Press 4 for Division");
+		System.out.print("Enter first number: ");
+	    int a = sc.nextInt();
+		System.out.print("Enter second number: ");
+	    int b = sc.nextInt();
+		System.out.println("Enter your choice");
+		int choice = sc.nextInt();
+		switch (choice)
+		{
+		case 1:
+			System.out.println(a+b);
+		    break;
+		case 2:
+			System.out.println(a-b);
+		    break;
+		case 3:
+			System.out.println(a*b);
+		    break;
+		case 4:
+			System.out.println(a/b);
+		    break;
+		default:
+			System.out.println("not exists");
+		}
+		
+	}
+	
+}

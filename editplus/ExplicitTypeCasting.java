@@ -1,0 +1,22 @@
+class ExplicitTypeCasting 
+{
+	public static void main(String[] args) 
+	{
+		long a = 1004544522546556l;
+		int b = (int)a;
+		
+		double c = 28852556655525555.888;
+		float d = (float)c;
+		
+		char ch = 'a';
+		
+		System.out.println(a);
+		System.out.println(b);
+		System.out.println(c);
+		System.out.println(d);
+		
+			
+		
+	   
+	}
+}

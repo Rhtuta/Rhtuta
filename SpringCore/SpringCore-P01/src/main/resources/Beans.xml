@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- bean definitions here -->
+
+   <!-- <bean id="petrolEng" class="org.cfs.petrolEngine" scope="singleton"/> -->
+    <!--singleton scope only one object is created and shared to other objects of same class -->
+
+    <bean id="petrolEng" class="org.cfs.petrolEngine" scope="prototype"/>
+    <!--prototype scope, everytime class is called by getBeans() new object is created -->
+
+    <bean id="Car" class="org.cfs.Car"> <!-- default work as singleton scope -->
+   <!-- <property name ="engine" ref="petrolEng"></property> --><!-- for setter -->
+        <constructor-arg name="engine" ref="petrolEng"></constructor-arg><!-- for constructor -->
+        <!-- car and petrolEngine both mentioned class object is created in eager loading in application context -->
+    </bean>
+</beans>

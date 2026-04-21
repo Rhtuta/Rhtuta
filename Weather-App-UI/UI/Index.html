@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nimbus — Weather</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+
+<!-- ░░ AMBIENT BACKGROUND ░░░░░░░░░░░░░░░░░░░░░░ -->
+<div class="bg-scene">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="grid-lines"></div>
+</div>
+
+<!-- ░░ APP SHELL ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+<div class="shell">
+
+  <!-- ── HEADER ───────────────────────────────── -->
+  <header class="header">
+    <div class="logo">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="14" r="13" stroke="url(#lg1)" stroke-width="2"/>
+        <path d="M8 16 Q14 8 20 16" stroke="url(#lg1)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <defs>
+          <linearGradient id="lg1" x1="0" y1="0" x2="28" y2="28">
+            <stop stop-color="#a78bfa"/><stop offset="1" stop-color="#38bdf8"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <span>Nimbus</span>
+    </div>
+    <div class="header-clock" id="header-clock">—</div>
+  </header>
+
+  <!-- ── SEARCH ZONE ──────────────────────────── -->
+  <section class="search-zone">
+    <div class="search-label">Where are you?</div>
+    <div class="search-row">
+      <div class="search-field">
+        <svg class="sf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+          <circle cx="12" cy="9" r="2.5"/>
+        </svg>
+        <input id="city" type="text" placeholder="City name…" autocomplete="off" spellcheck="false"/>
+      </div>
+
+      <div class="days-group" id="days-group">
+        <button class="dg-btn active" data-days="1">1D</button>
+        <button class="dg-btn"       data-days="2">2D</button>
+        <button class="dg-btn"       data-days="3">3D</button>
+      </div>
+
+      <button class="fetch-btn" id="btn">
+        <span class="fb-label">Fetch</span>
+        <svg class="fb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M4 10h12M10 4l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="fb-spinner"></span>
+      </button>
+    </div>
+
+    <div id="error" class="error-msg"></div>
+  </section>
+
+  <!-- ── LOADER ───────────────────────────────── -->
+  <div id="loader" class="loader hidden">
+    <div class="loader-ring"></div>
+    <div class="loader-ring r2"></div>
+    <div class="loader-text">Reading the skies…</div>
+  </div>
+
+  <!-- ══ RESULTS ══════════════════════════════ -->
+  <div id="results" class="results hidden">
+
+    <!-- Current hero -->
+    <div class="hero-card" id="hero-card">
+      <div class="hc-left">
+        <div class="hc-location" id="hc-location">—</div>
+        <div class="hc-temp-row">
+          <span class="hc-temp"  id="hc-temp">—</span>
+          <span class="hc-unit">°C</span>
+        </div>
+        <div class="hc-condition" id="hc-condition">—</div>
+        <div class="hc-sub"      id="hc-sub">—</div>
+      </div>
+      <div class="hc-right">
+        <div class="hc-icon-wrap">
+          <img id="hc-icon" class="hc-icon" src="" alt=""/>
+          <div class="hc-icon-shadow"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stat pills -->
+    <div class="stat-row" id="stat-row"></div>
+
+    <!-- Chart card -->
+    <div class="chart-card">
+      <div class="cc-title">Temperature Curve</div>
+      <div class="cc-body">
+        <canvas id="chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Forecast strip -->
+    <div class="fc-header">
+      <span class="fc-label" id="fc-label">— Day Forecast</span>
+      <span class="fc-divider"></span>
+    </div>
+    <div class="forecast-strip" id="forecast"></div>
+
+  </div><!-- /results -->
+
+</div><!-- /shell -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

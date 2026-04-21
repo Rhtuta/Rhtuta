@@ -1,0 +1,48 @@
+
+import java.util.Scanner;
+class Duplicates 
+{
+	public static void main(String[] args) 
+	{
+		int[] arr = new int[5];
+		Scanner sc = new Scanner(System.in);
+		System.out.println("Enter array elements: ");
+		for(int i=0; i<arr.length; i++)
+		{
+			arr[i] = sc.nextInt();
+		}
+		
+		int freq = 0;
+		boolean isAlreadyFind;
+		System.out.println("Duplicate elements are: ");
+		for(int i=0; i<arr.length; i++)
+		{
+			isAlreadyFind = false;
+		  for(int k=0; k<i ; k++)
+		  {	
+		   	  
+		   if(arr[i]==arr[k])
+			  {
+			   isAlreadyFind =true;
+			  }
+		  }
+		  if(isAlreadyFind)
+			  continue;
+		  
+		   
+			for(int j=i+1; j<arr.length; j++)
+			{
+				if (arr[i] == arr[j])
+				{
+					
+					System.out.println(arr[i]);
+				    break;	
+				}
+				
+			}
+		  
+			
+		  
+		}
+	}
+}

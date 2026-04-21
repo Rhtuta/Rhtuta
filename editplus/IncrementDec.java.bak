@@ -1,0 +1,24 @@
+class IncrementDec 
+{
+	public static void main(String[] args) 
+	{
+		int a = 7;
+		a++; //post inc
+		System.out.println(a);
+		++a; //pre inc
+		System.out.println(a);
+		--a; //pre dec
+		System.out.println(a);
+		a--; //post dec
+		System.out.println(a);
+		
+		int res = a++ + ++a + ++a + a++ + ++a;	// 7 9 10 10 12  -> 48
+		System.out.println(res);
+		
+		res = a-- + --a + --a + a-- + --a;  // 12 10 9 9 7  -> 47
+		System.out.println(res);
+		int r = a++ + --a + ++a + a-- + a++;  // 7 7 8 8 7  -> 37
+		System.out.println(r);
+		
+	}
+}
