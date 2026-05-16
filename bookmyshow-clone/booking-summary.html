@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Booking Summary - BookMyShow</title>
+
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container">
+
+      <a href="/" class="navbar-brand">
+        <div class="logo">
+          Book<span>MyShow</span>
+        </div>
+      </a>
+
+      <div class="navbar-nav">
+
+        <a href="/movies.html">
+          Movies
+        </a>
+
+        <div class="user-menu">
+
+          <div class="user-avatar" id="user-avatar">
+            U
+          </div>
+
+          <div class="dropdown-menu">
+
+            <a href="/user-dashboard.html">
+              👤 My Profile
+            </a>
+
+            <a href="/user-dashboard.html#bookings">
+              🎟️ My Bookings
+            </a>
+
+            <div class="dropdown-divider"></div>
+
+            <button id="logout-btn">
+              🚪 Logout
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </nav>
+
+  <!-- Booking Summary -->
+  <section class="booking-summary-page">
+
+    <div class="container">
+
+      <!-- Header + Filter -->
+      <div
+        class="flex-between mb-3"
+        style="margin-top: 30px;"
+      >
+
+        <div>
+
+          <h2>
+            Booking Summary
+          </h2>
+
+          <p class="text-gray">
+            Review your booking details before payment
+          </p>
+
+        </div>
+
+        <div>
+
+          <select
+            class="form-control"
+            id="status-filter"
+            style="width: 180px;"
+          >
+
+            <option value="">
+              All Status
+            </option>
+
+            <option value="CONFIRMED">
+              Confirmed
+            </option>
+
+            <option value="PENDING">
+              Pending
+            </option>
+
+
+            <option value="FAILED">
+              Failed
+            </option>
+
+            <option value="CANCELLED">
+              Cancelled
+            </option>
+
+          </select>
+
+        </div>
+
+      </div>
+
+      <!-- Summary Card -->
+      <div
+        class="summary-card"
+        id="summary-card"
+      >
+
+        <div
+          class="text-center"
+          style="padding: 60px 0;"
+        >
+
+          <div
+            class="spinner"
+            style="
+              width: 40px;
+              height: 40px;
+              border-width: 3px;
+            "
+          ></div>
+
+          <p class="mt-2 text-gray">
+            Loading booking details...
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/razorpay.js"></script>
+
+  <script>
+
+    let currentBooking = null;
+
+    document.addEventListener(
+      'DOMContentLoaded',
+      async () => {
+
+        if (!Utils.requireAuth()) return;
+
+        const booking =
+          Utils.getSession('pendingBooking');
+
+        if (!booking) {
+
+          Utils.showToast(
+            'No booking found',
+            'error'
+          );
+
+          window.location.href =
+            '/movies.html';
+
+          return;
+        }
+
+        currentBooking = booking;
+
+        renderSummary(booking);
+
+        setupStatusFilter();
+      }
+    );
+
+    function setupStatusFilter() {
+
+      const filter =
+        document.getElementById(
+          'status-filter'
+        );
+
+      filter.addEventListener(
+        'change',
+        () => {
+
+          const value = filter.value;
+
+          if (!value) {
+
+            renderSummary(currentBooking);
+
+            return;
+          }
+
+          if (
+            currentBooking.status &&
+            currentBooking.status === value
+          ) {
+
+            renderSummary(currentBooking);
+
+          } else {
+
+            document.getElementById(
+              'summary-card'
+            ).innerHTML = `
+
+              <div class="empty-state">
+
+                <div class="icon">
+                  🎟️
+                </div>
+
+                <h3>
+                  No Booking Found
+                </h3>
+
+                <p>
+                  No booking available
+                  with status:
+                  <strong>${value}</strong>
+                </p>
+
+              </div>
+            `;
+          }
+        }
+      );
+    }
+
+    function getStatusClass(status) {
+
+      switch (status) {
+
+        case 'CONFIRMED':
+          return 'confirmed';
+
+        case 'PENDING':
+          return 'pending';
+
+        case 'FAILED':
+          return 'failed';
+
+        case 'CANCELLED':
+          return 'cancelled';
+
+        default:
+          return 'pending';
+      }
+    }
+
+    function renderSummary(booking) {
+
+      const seats =
+        Array.isArray(booking.seats)
+          ? booking.seats.join(', ')
+          : booking.seats || 'N/A';
+
+      const status =
+        booking.status || 'PENDING';
+
+      document.getElementById(
+        'summary-card'
+      ).innerHTML = `
+
+        <div class="summary-header">
+
+          <h2>
+            Booking Summary
+          </h2>
+
+          <p>
+            Review your booking
+            details before payment
+          </p>
+
+        </div>
+
+        <div class="summary-body">
+
+          <div class="summary-row">
+
+            <span class="summary-label">
+              Booking Number
+            </span>
+
+            <span class="summary-value">
+              ${booking.bookingNumber || 'N/A'}
+            </span>
+
+          </div>
+
+          <div class="summary-row">
+
+            <span class="summary-label">
+              Movie
+            </span>
+
+            <span class="summary-value">
+              ${Utils.escapeHtml(
+                booking.movie || 'N/A'
+              )}
+            </span>
+
+          </div>
+
+          <div class="summary-row">
+
+            <span class="summary-label">
+              Theater
+            </span>
+
+            <span class="summary-value">
+              ${Utils.escapeHtml(
+                booking.theater || 'N/A'
+              )}
+            </span>
+
+          </div>
+
+          <div class="summary-row">
+
+            <span class="summary-label">
+              Screen
+            </span>
+
+            <span class="summary-value">
+              ${Utils.escapeHtml(
+                booking.screen || 'N/A'
+              )}
+            </span>
+
+          </div>
+
+          <div class="summary-row">
+
+            <span class="summary-label">
+              Show Time
+            </span>
+
+            <span class="summary-value">
+
+              ${
+                booking.showTime
+                  ? Utils.formatDateTime(
+                      booking.showTime
+                    )
+                  : 'N/A'
+              }
+
+            </span>
+
+          </div>
+
+          <div class="summary-row">
+
+            <span class="summary-label">
+              Seats
+            </span>
+
+            <span class="summary-value">
+              ${seats}
+            </span>
+
+          </div>
+
+          <div class="summary-row">
+
+            <span class="summary-label">
+              Status
+            </span>
+
+            <span class="
+              status-badge
+              ${getStatusClass(status)}
+            ">
+              ${status}
+            </span>
+
+          </div>
+
+          <div class="summary-total">
+
+            <span class="label">
+              Total Amount
+            </span>
+
+            <span class="amount">
+
+              ${Utils.formatCurrency(
+                booking.totalAmount || 0
+              )}
+
+            </span>
+
+          </div>
+
+        </div>
+
+        ${
+          status !== 'CONFIRMED' &&
+          status !== 'CANCELLED'
+          ? `
+
+            <div
+              class="text-center"
+              style="padding: 24px;"
+            >
+
+              <button
+                class="
+                  btn
+                  btn-primary
+                  btn-lg
+                "
+                onclick="
+                  proceedToPayment()
+                "
+              >
+
+                Pay
+                ${Utils.formatCurrency(
+                  booking.totalAmount || 0
+                )}
+
+              </button>
+
+            </div>
+
+          `
+          : ''
+        }
+
+      `;
+    }
+
+    async function proceedToPayment() {
+
+      const booking =
+        Utils.getSession(
+          'pendingBooking'
+        );
+
+      if (
+        !booking ||
+        !booking.razorpayOrderId
+      ) {
+
+        Utils.showToast(
+          'Invalid booking data',
+          'error'
+        );
+
+        return;
+      }
+
+      await RazorpayHandler
+        .initiatePayment(booking);
+    }
+
+  </script>
+
+</body>
+</html>

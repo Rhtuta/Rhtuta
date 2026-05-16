@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Screen Management - BookMyShow Admin</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="logo">Book<span>MyShow</span></div>
+      
+      <nav class="admin-nav">
+        <a href="/admin-dashboard.html">📊 Dashboard</a>
+        <a href="/admin-movie-management.html">🎬 Movies</a>
+        <a href="/admin-theater-management.html">🏢 Theaters</a>
+        <a href="/admin-screen-management.html" class="active">📺 Screens</a>
+        <a href="/admin-seat-management.html">💺 Seats</a>
+        <a href="/admin-show-management.html">🎭 Shows</a>
+        <a href="/admin-booking-view.html">🎟️ Bookings</a>
+        <a href="/admin-users-view.html">👥 Users</a>
+        <div class="dropdown-divider"></div>
+        <a href="/user-dashboard.html">👤 My Profile</a>
+        <a href="#" id="logout-btn">🚪 Logout</a>
+      </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="admin-content">
+      <div class="admin-header">
+        <h1>Screen Management</h1>
+        <button class="btn btn-primary" onclick="openAddScreenModal()">
+          + Add Screen
+        </button>
+      </div>
+      
+      <!-- Screens Table -->
+      <div class="table-container">
+        <div class="table-header">
+          <h3>All Screens</h3>
+          <div class="flex gap-2">
+            <select class="form-control" id="theater-filter" style="width: 200px;">
+              <option value="">All Theaters</option>
+            </select>
+          </div>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Screen Name</th>
+              <th>Theater</th>
+              <th>City</th>
+              <th>Total Seats</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="screens-table">
+            <tr>
+              <td colspan="6" class="text-center">
+                <div class="spinner" style="margin: 20px auto;"></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  
+  <!-- Add/Edit Screen Modal -->
+  <div class="modal-overlay" id="screen-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="screen-modal-title">Add Screen</h3>
+        <button class="modal-close" onclick="Utils.closeModal('screen-modal')">&times;</button>
+      </div>
+      <form id="screen-form">
+        <div class="modal-body">
+          <input type="hidden" id="screen-id">
+          
+          <div class="form-group">
+            <label for="screen-name">Screen Name *</label>
+            <input type="text" id="screen-name" name="name" class="form-control" 
+                   placeholder="e.g., Screen 1, IMAX, Dolby Atmos" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="screen-theater">Theater *</label>
+            <select id="screen-theater" name="theaterId" class="form-control" required>
+              <option value="">Select Theater</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="screen-seats">Total Seats *</label>
+            <input type="number" id="screen-seats" name="totalSeats" class="form-control" required min="1">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="Utils.closeModal('screen-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Screen</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Add Seats Modal -->
+  <div class="modal-overlay" id="seats-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Add Seats to Screen</h3>
+        <button class="modal-close" onclick="Utils.closeModal('seats-modal')">&times;</button>
+      </div>
+      <form id="seats-form">
+        <div class="modal-body">
+          <input type="hidden" id="seats-screen-id">
+          
+          <div class="form-group">
+            <label for="seat-number">Seat Number *</label>
+            <input type="text" id="seat-number" name="seatNumber" class="form-control" 
+                   placeholder="e.g., A1, B5, C10" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="seat-type">Seat Type *</label>
+            <select id="seat-type" name="seatType" class="form-control" required>
+              <option value="">Select Type</option>
+              <option value="REGULAR">Regular</option>
+              <option value="PREMIUM">Premium</option>
+              <option value="VIP">VIP</option>
+              <option value="RECLINER">Recliner</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="seat-price">Base Price (₹) *</label>
+            <input type="number" id="seat-price" name="basePrice" class="form-control" required min="0" step="0.01">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="Utils.closeModal('seats-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Seat</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    let allScreens = [];
+    let allTheaters = [];
+    
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!Utils.requireAuth()) return;
+      if (!Utils.requireAdmin()) return;
+      
+      await loadTheaters();
+      await loadScreens();
+      setupFilters();
+      setupForms();
+    });
+    
+    async function loadTheaters() {
+      try {
+        allTheaters = await API.theaters.getAll();
+        populateTheaterDropdowns();
+      } catch (error) {
+        console.error('Failed to load theaters:', error);
+      }
+    }
+    
+    function populateTheaterDropdowns() {
+      const filterSelect = document.getElementById('theater-filter');
+      const formSelect = document.getElementById('screen-theater');
+      
+      const options = allTheaters.map(t => `<option value="${t.id}">${Utils.escapeHtml(t.name)} (${Utils.escapeHtml(t.city)})</option>`).join('');
+      
+      filterSelect.innerHTML = '<option value="">All Theaters</option>' + options;
+      formSelect.innerHTML = '<option value="">Select Theater</option>' + options;
+    }
+    
+    async function loadScreens() {
+      try {
+        allScreens = await API.screens.getAll();
+        renderScreens(allScreens);
+      } catch (error) {
+        console.error('Failed to load screens:', error);
+        document.getElementById('screens-table').innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center text-danger">Failed to load screens</td>
+          </tr>
+        `;
+      }
+    }
+    
+    function renderScreens(screens) {
+      const tbody = document.getElementById('screens-table');
+      
+      if (!screens || screens.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center text-gray">No screens found</td>
+          </tr>
+        `;
+        return;
+      }
+      
+      tbody.innerHTML = screens.map(screen => `
+        <tr>
+          <td>${screen.id}</td>
+          <td><strong>${Utils.escapeHtml(screen.name)}</strong></td>
+          <td>${Utils.escapeHtml(screen.theater?.name || '-')}</td>
+          <td>${Utils.escapeHtml(screen.theater?.city || '-')}</td>
+          <td>${screen.totalSeats || 0}</td>
+          <td>
+            <div class="action-btns">
+              <button class="action-btn view" onclick="openAddSeatsModal(${screen.id})" title="Add Seats">💺</button>
+              <button class="action-btn edit" onclick="editScreen(${screen.id})" title="Edit">✏️</button>
+              <button class="action-btn delete" onclick="deleteScreen(${screen.id})" title="Delete">🗑️</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+    
+    function setupFilters() {
+      document.getElementById('theater-filter').addEventListener('change', async (e) => {
+        const theaterId = e.target.value;
+        if (!theaterId) {
+          renderScreens(allScreens);
+        } else {
+          try {
+            const screens = await API.screens.getByTheater(theaterId);
+            renderScreens(screens);
+          } catch (error) {
+            Utils.showToast('Failed to filter screens', 'error');
+          }
+        }
+      });
+    }
+    
+    function setupForms() {
+      // Screen form
+      document.getElementById('screen-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const screenId = document.getElementById('screen-id').value;
+        const screenData = {
+  name: document.getElementById('screen-name').value.trim(),
+  totalSeats: parseInt(document.getElementById('screen-seats').value),
+  theater: {
+    id: parseInt(document.getElementById('screen-theater').value)
+  }
+};
+        
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span> Saving...';
+        
+        try {
+          if (screenId) {
+            await API.screens.update(screenId, screenData);
+            Utils.showToast('Screen updated successfully', 'success');
+          } else {
+            await API.screens.create(screenData);
+            Utils.showToast('Screen created successfully', 'success');
+          }
+          
+          Utils.closeModal('screen-modal');
+          await loadScreens();
+        } catch (error) {
+          Utils.showToast(error.message || 'Failed to save screen', 'error');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Save Screen';
+        }
+      });
+      
+      // Seats form
+      document.getElementById('seats-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const screenId = document.getElementById('seats-screen-id').value;
+        const seatData = {
+          seatNumber: document.getElementById('seat-number').value.trim(),
+          seatType: document.getElementById('seat-type').value,
+          basePrice: parseFloat(document.getElementById('seat-price').value)
+        };
+        
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span> Adding...';
+        
+        try {
+          await API.seats.create(screenId, seatData);
+          Utils.showToast('Seat added successfully', 'success');
+          
+          // Reset form but keep modal open for adding more seats
+          document.getElementById('seat-number').value = '';
+          document.getElementById('seat-price').value = '';
+        } catch (error) {
+          Utils.showToast(error.message || 'Failed to add seat', 'error');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Add Seat';
+        }
+      });
+    }
+    
+    function openAddScreenModal() {
+      document.getElementById('screen-modal-title').textContent = 'Add Screen';
+      document.getElementById('screen-form').reset();
+      document.getElementById('screen-id').value = '';
+      Utils.openModal('screen-modal');
+    }
+    
+    async function editScreen(id) {
+      try {
+        const screen = await API.screens.getById(id);
+        
+        document.getElementById('screen-modal-title').textContent = 'Edit Screen';
+        document.getElementById('screen-id').value = screen.id;
+        document.getElementById('screen-name').value = screen.name || '';
+        document.getElementById('screen-theater').value = screen.theater?.id || '';
+        document.getElementById('screen-seats').value = screen.totalSeats || 0;
+        
+        Utils.openModal('screen-modal');
+      } catch (error) {
+        Utils.showToast('Failed to load screen details', 'error');
+      }
+    }
+    
+    async function deleteScreen(id) {
+      const confirmed = await Utils.confirm(
+        'Are you sure you want to delete this screen? All associated seats and shows will also be affected.',
+        'Delete Screen'
+      );
+      
+      if (!confirmed) return;
+      
+      try {
+        await API.screens.delete(id);
+        Utils.showToast('Screen deleted successfully', 'success');
+        await loadScreens();
+      } catch (error) {
+        Utils.showToast(error.message || 'Failed to delete screen', 'error');
+      }
+    }
+    
+    function openAddSeatsModal(screenId) {
+      document.getElementById('seats-form').reset();
+      document.getElementById('seats-screen-id').value = screenId;
+      Utils.openModal('seats-modal');
+    }
+  </script>
+</body>
+</html>

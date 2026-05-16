@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Select Seats - BookMyShow</title>
+
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container">
+
+      <a href="/" class="navbar-brand">
+        <div class="logo">Book<span>MyShow</span></div>
+      </a>
+
+      <div class="navbar-nav">
+        <a href="/movies.html">Movies</a>
+
+        <div id="user-nav">
+          <div class="user-menu">
+
+            <div class="user-avatar" id="user-avatar">
+              U
+            </div>
+
+            <div class="dropdown-menu">
+              <a href="/user-dashboard.html">👤 My Profile</a>
+              <a href="/user-dashboard.html#bookings">🎟️ My Bookings</a>
+
+              <div class="dropdown-divider"></div>
+
+              <button id="logout-btn">
+                🚪 Logout
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- Show Info -->
+  <section class="section" style="background: var(--darker); padding: 20px 0;">
+    <div class="container">
+
+      <div id="show-info" class="flex-between">
+
+        <div class="text-center" style="width: 100%;">
+          <div class="spinner"
+               style="width:30px;height:30px;border-width:2px;">
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Seat Selection -->
+  <section class="seat-selection-page">
+    <div class="container">
+
+      <!-- Legend -->
+      <div class="seat-legend">
+
+        <div class="legend-item">
+          <div class="legend-box available"></div>
+          <span>Available</span>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-box selected"></div>
+          <span>Selected</span>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-box booked"></div>
+          <span>Booked</span>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-box locked"></div>
+          <span>Locked</span>
+        </div>
+
+      </div>
+
+      <!-- Screen -->
+      <div class="screen">
+        SCREEN
+      </div>
+
+      <!-- Seats -->
+      <div class="seat-container" id="seats-container">
+
+        <div class="text-center" style="padding:60px 0;">
+          <div class="spinner"
+               style="width:40px;height:40px;border-width:3px;">
+          </div>
+
+          <p class="mt-2 text-gray">
+            Loading seats...
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Booking Sidebar -->
+  <div class="booking-sidebar"
+       id="booking-sidebar"
+       style="display:none;">
+
+    <div class="selected-seats-info">
+
+      <div class="seats" id="selected-seats-display">
+        No seats selected
+      </div>
+
+      <div class="total" id="total-amount">
+        ₹0
+      </div>
+
+    </div>
+
+    <button class="btn btn-primary btn-lg"
+            id="proceed-btn"
+            disabled>
+      Proceed to Pay
+    </button>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+
+  <!-- Razorpay -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="js/razorpay.js"></script>
+
+  <script>
+
+    let showId = null;
+    let showData = null;
+    let showSeats = [];
+    let selectedSeats = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+
+      if (!Utils.requireAuth()) return;
+
+      const params = Utils.getUrlParams();
+
+      showId = params.showId;
+
+      if (!showId) {
+
+        Utils.showToast('No show selected', 'error');
+
+        window.location.href = '/movies.html';
+
+        return;
+      }
+
+      await loadShowDetails();
+
+      loadSeats();
+
+      setupProceedButton();
+    });
+
+    async function loadShowDetails() {
+
+      try {
+
+        showData = await API.shows.getById(showId);
+
+        console.log("SHOW DATA =", showData);
+
+        renderShowInfo(showData);
+
+      } catch (error) {
+
+        console.error('Failed to load show:', error);
+
+        Utils.showToast(
+          'Failed to load show details',
+          'error'
+        );
+      }
+    }
+
+    function renderShowInfo(show) {
+
+      document.getElementById('show-info').innerHTML = `
+        <div>
+          <h2>
+            ${Utils.escapeHtml(show.movie?.title || 'Movie')}
+          </h2>
+
+          <p class="text-gray">
+
+            ${Utils.escapeHtml(show.screen?.theater?.name || 'Theater')}
+            |
+
+            ${Utils.escapeHtml(show.screen?.name || 'Screen')}
+            |
+
+            ${Utils.formatDateTime(show.startTime)}
+
+          </p>
+        </div>
+
+        <div class="text-right">
+          <p class="text-gray">
+            ${Utils.escapeHtml(show.screen?.theater?.city || '')}
+          </p>
+        </div>
+      `;
+
+      document.title =
+        `Select Seats - ${show.movie?.title || 'Movie'}`;
+    }
+
+    function loadSeats() {
+
+      try {
+
+        showSeats = showData.showSeats || [];
+
+        console.log("SHOW SEATS =", showSeats);
+
+        renderSeats(showSeats);
+
+        document.getElementById(
+          'booking-sidebar'
+        ).style.display = 'flex';
+
+      } catch (error) {
+
+        console.error('Failed to load seats:', error);
+
+        Utils.showToast(
+          'Failed to load seats',
+          'error'
+        );
+      }
+    }
+
+    function renderSeats(seats) {
+
+      const container =
+        document.getElementById('seats-container');
+
+      if (!seats || seats.length === 0) {
+
+        container.innerHTML = `
+          <div class="empty-state">
+
+            <div class="icon">
+              💺
+            </div>
+
+            <h3>No Seats Found</h3>
+
+            <p>
+              This show has no seats configured
+            </p>
+
+          </div>
+        `;
+
+        return;
+      }
+
+      const rows = {};
+
+      seats.forEach(showSeat => {
+
+        const seatNumber =
+          showSeat.seat?.seatNumber || 'X1';
+
+        const row = seatNumber.charAt(0);
+
+        if (!rows[row]) {
+          rows[row] = [];
+        }
+
+        rows[row].push(showSeat);
+      });
+
+      const sortedRows =
+        Object.keys(rows).sort();
+
+      container.innerHTML = sortedRows.map(row => {
+
+        const rowSeats = rows[row].sort((a, b) => {
+
+          const numA = parseInt(
+            a.seat.seatNumber.substring(1)
+          );
+
+          const numB = parseInt(
+            b.seat.seatNumber.substring(1)
+          );
+
+          return numA - numB;
+        });
+
+        return `
+          <div class="seat-row">
+
+            <div class="row-label">
+              ${row}
+            </div>
+
+            ${rowSeats.map(showSeat => {
+
+              const status =
+                (showSeat.status || 'AVAILABLE')
+                .toLowerCase();
+
+              const seatNumber =
+                showSeat.seat?.seatNumber || '?';
+
+              const isSelected =
+                selectedSeats.some(
+                  s => s.id === showSeat.id
+                );
+
+              return `
+                <div
+                  class="seat ${isSelected ? 'selected' : status}"
+
+                  data-seat-id="${showSeat.id}"
+
+                  data-status="${status}"
+
+                  data-price="${showSeat.price || 0}"
+
+                  data-seat-number="${seatNumber}"
+
+                  onclick="toggleSeat(this)"
+                >
+                  ${seatNumber.substring(1)}
+                </div>
+              `;
+            }).join('')}
+
+            <div class="row-label">
+              ${row}
+            </div>
+
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleSeat(element) {
+
+      const status =
+        element.dataset.status;
+
+      if (
+        status === 'booked' ||
+        status === 'locked'
+      ) {
+
+        Utils.showToast(
+          'Seat is not available',
+          'warning'
+        );
+
+        return;
+      }
+
+      const seatId =
+        parseInt(element.dataset.seatId);
+
+      const price =
+        parseFloat(element.dataset.price);
+
+      const seatNumber =
+        element.dataset.seatNumber;
+
+      const existingIndex =
+        selectedSeats.findIndex(
+          s => s.id === seatId
+        );
+
+      if (existingIndex > -1) {
+
+        selectedSeats.splice(existingIndex, 1);
+
+        element.classList.remove('selected');
+
+        element.classList.add('available');
+
+      } else {
+
+        if (selectedSeats.length >= 10) {
+
+          Utils.showToast(
+            'Maximum 10 seats allowed',
+            'warning'
+          );
+
+          return;
+        }
+
+        selectedSeats.push({
+          id: seatId,
+          price,
+          seatNumber
+        });
+
+        element.classList.remove('available');
+
+        element.classList.add('selected');
+      }
+
+      updateBookingSummary();
+    }
+
+    function updateBookingSummary() {
+
+      const seatsDisplay =
+        document.getElementById(
+          'selected-seats-display'
+        );
+
+      const totalDisplay =
+        document.getElementById(
+          'total-amount'
+        );
+
+      const proceedBtn =
+        document.getElementById(
+          'proceed-btn'
+        );
+
+      if (selectedSeats.length === 0) {
+
+        seatsDisplay.textContent =
+          'No seats selected';
+
+        totalDisplay.textContent =
+          '₹0';
+
+        proceedBtn.disabled = true;
+
+      } else {
+
+        const seatNumbers =
+          selectedSeats
+            .map(s => s.seatNumber)
+            .join(', ');
+
+        const total =
+          selectedSeats.reduce(
+            (sum, s) => sum + s.price,
+            0
+          );
+
+        seatsDisplay.textContent =
+          `${selectedSeats.length} Seat(s): ${seatNumbers}`;
+
+        totalDisplay.textContent =
+          `₹${total}`;
+
+        proceedBtn.disabled = false;
+      }
+    }
+
+    function setupProceedButton() {
+
+      document.getElementById(
+        'proceed-btn'
+      ).onclick = async () => {
+
+        if (selectedSeats.length === 0) {
+
+          Utils.showToast(
+            'Select at least one seat',
+            'warning'
+          );
+
+          return;
+        }
+
+        const button =
+          document.getElementById(
+            'proceed-btn'
+          );
+
+        button.disabled = true;
+
+        button.innerHTML =
+          'Processing...';
+
+        try {
+
+          const seatIds =
+            selectedSeats.map(s => s.id);
+
+          const bookingResponse =
+            await API.bookings.create(
+              showId,
+              seatIds
+            );
+
+          console.log(
+            "BOOKING RESPONSE =",
+            bookingResponse
+          );
+
+          /*
+            IMPORTANT FIX
+          */
+
+          Utils.setSession('pendingBooking', {
+
+            bookingNumber:
+              bookingResponse.bookingNumber,
+
+            movie:
+              showData.movie?.title || '',
+
+            theater:
+              showData.screen?.theater?.name || '',
+
+            city:
+              showData.screen?.theater?.city || '',
+
+            screen:
+              showData.screen?.name || '',
+
+            showTime:
+              showData.startTime || '',
+
+            seats:
+              selectedSeats.map(
+                s => s.seatNumber
+              ),
+
+            totalAmount:
+              bookingResponse.totalAmount ||
+
+              selectedSeats.reduce(
+                (sum, s) => sum + s.price,
+                0
+              )
+          });
+
+          await RazorpayHandler.initiatePayment(
+
+            bookingResponse,
+
+            () => {
+
+              window.location.href =
+                '/payment-success.html';
+            },
+
+            (error) => {
+
+              console.error(error);
+
+              button.disabled = false;
+
+              button.innerHTML =
+                'Proceed to Pay';
+            }
+          );
+
+        } catch (error) {
+
+          console.error(error);
+
+          Utils.showToast(
+            error.message || 'Booking failed',
+            'error'
+          );
+
+          button.disabled = false;
+
+          button.innerHTML =
+            'Proceed to Pay';
+        }
+      };
+    }
+
+  </script>
+
+</body>
+</html>

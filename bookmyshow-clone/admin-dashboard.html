@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - BookMyShow</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="logo">Book<span>MyShow</span></div>
+      
+      <nav class="admin-nav">
+        <a href="/admin-dashboard.html" class="active">📊 Dashboard</a>
+        <a href="/admin-movie-management.html">🎬 Movies</a>
+        <a href="/admin-theater-management.html">🏢 Theaters</a>
+        <a href="/admin-screen-management.html">📺 Screens</a>
+        <a href="/admin-seat-management.html">💺 Seats</a>
+        <a href="/admin-show-management.html">🎭 Shows</a>
+        <a href="/admin-booking-view.html">🎟️ Bookings</a>
+        <a href="/admin-users-view.html">👥 Users</a>
+        <div class="dropdown-divider"></div>
+        <a href="/user-dashboard.html">👤 My Profile</a>
+        <a href="#" id="logout-btn">🚪 Logout</a>
+      </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="admin-content">
+      <div class="admin-header">
+        <h1>Dashboard</h1>
+        <p class="text-gray">Welcome back, Admin!</p>
+      </div>
+      
+      <!-- Stats -->
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card">
+          <div class="icon primary">🎬</div>
+          <div>
+            <div class="value" id="total-movies">-</div>
+            <div class="label">Total Movies</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="icon success">🎟️</div>
+          <div>
+            <div class="value" id="total-bookings">-</div>
+            <div class="label">Total Bookings</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="icon warning">🏢</div>
+          <div>
+            <div class="value" id="total-theaters">-</div>
+            <div class="label">Theaters</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="icon info">👥</div>
+          <div>
+            <div class="value" id="total-users">-</div>
+            <div class="label">Users</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Recent Bookings -->
+      <div class="table-container mt-4">
+        <div class="table-header">
+          <h3>Recent Bookings</h3>
+          <a href="/admin-booking-view.html" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Booking #</th>
+              <th>Movie</th>
+              <th>User</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="recent-bookings">
+            <tr>
+              <td colspan="6" class="text-center">
+                <div class="spinner" style="margin: 20px auto;"></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!Utils.requireAuth()) return;
+      if (!Utils.requireAdmin()) return;
+      
+      await loadStats();
+      await loadRecentBookings();
+    });
+    
+    async function loadStats() {
+      try {
+        // Load all data for stats
+        const [movies, bookings, theaters, users] = await Promise.all([
+          API.movies.getAll().catch(() => []),
+          API.bookings.getAll().catch(() => []),
+          API.theaters.getAll().catch(() => []),
+          API.users.getAll().catch(() => [])
+        ]);
+        
+        document.getElementById('total-movies').textContent = movies.length || 0;
+        document.getElementById('total-bookings').textContent = bookings.length || 0;
+        document.getElementById('total-theaters').textContent = theaters.length || 0;
+        document.getElementById('total-users').textContent = users.length || 0;
+      } catch (error) {
+        console.error('Failed to load stats:', error);
+      }
+    }
+    
+    async function loadRecentBookings() {
+      try {
+        const bookings = await API.bookings.getAll();
+        const recent = bookings.slice(0, 5);
+        
+        if (!recent || recent.length === 0) {
+          document.getElementById('recent-bookings').innerHTML = `
+            <tr>
+              <td colspan="6" class="text-center text-gray">No bookings yet</td>
+            </tr>
+          `;
+          return;
+        }
+        
+        document.getElementById('recent-bookings').innerHTML = recent.map(booking => `
+          <tr>
+            <td><strong>${booking.bookingNumber || 'N/A'}</strong></td>
+            <td>${Utils.escapeHtml(booking.show?.movie?.title || 'N/A')}</td>
+            <td>${Utils.escapeHtml(booking.user?.email || 'N/A')}</td>
+            <td>${Utils.formatCurrency(booking.totalAmount || 0)}</td>
+            <td><span class="status-badge ${booking.status?.toLowerCase() || 'pending'}">${booking.status || 'PENDING'}</span></td>
+            <td>${booking.bookingTime ? Utils.formatDate(booking.bookingTime) : 'N/A'}</td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        console.error('Failed to load bookings:', error);
+        document.getElementById('recent-bookings').innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center text-danger">Failed to load bookings</td>
+          </tr>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movies - BookMyShow</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/" class="navbar-brand">
+        <div class="logo">Book<span>MyShow</span></div>
+      </a>
+      
+      <div class="navbar-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Search movies...">
+      </div>
+      
+      <div class="navbar-nav">
+        <a href="/movies.html" class="active">Movies</a>
+        
+        <div id="auth-nav">
+          <a href="/login.html" class="btn btn-outline btn-sm">Sign In</a>
+        </div>
+        
+        <div id="user-nav" class="hidden">
+          <a href="/admin-dashboard.html" id="admin-nav" class="hidden">Admin</a>
+          <div class="user-menu">
+            <div class="user-avatar" id="user-avatar">U</div>
+            <div class="dropdown-menu">
+              <a href="/user-dashboard.html">👤 My Profile</a>
+              <a href="/user-dashboard.html#bookings">🎟️ My Bookings</a>
+              <div class="dropdown-divider"></div>
+              <button id="logout-btn">🚪 Logout</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- Main Content -->
+  <main class="section">
+    <div class="container">
+      <h1 class="section-title mb-3">🎬 All Movies</h1>
+      
+      <!-- Filters -->
+      <div class="filters">
+        <div class="filter-group">
+          <label>Genre</label>
+          <select class="filter-select" id="genre-filter">
+            <option value="">All Genres</option>
+            <option value="Action">Action</option>
+            <option value="Comedy">Comedy</option>
+            <option value="Drama">Drama</option>
+            <option value="Horror">Horror</option>
+            <option value="Romance">Romance</option>
+            <option value="Thriller">Thriller</option>
+            <option value="Sci-Fi">Sci-Fi</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label>Language</label>
+          <select class="filter-select" id="language-filter">
+            <option value="">All Languages</option>
+            <option value="English">English</option>
+            <option value="Hindi">Hindi</option>
+            <option value="Tamil">Tamil</option>
+            <option value="Telugu">Telugu</option>
+            <option value="Malayalam">Malayalam</option>
+            <option value="Kannada">Kannada</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Movies Grid -->
+      <div class="movie-grid" id="movies-grid">
+        <div class="text-center" style="grid-column: 1/-1; padding: 60px 0;">
+          <div class="spinner" style="width: 40px; height: 40px; border-width: 3px;"></div>
+          <p class="mt-2 text-gray">Loading movies...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    let allMovies = [];
+    
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadMovies();
+      setupFilters();
+      setupSearch();
+    });
+    
+    async function loadMovies() {
+      try {
+        allMovies = await API.movies.getAll();
+        renderMovies(allMovies);
+      } catch (error) {
+        console.error('Failed to load movies:', error);
+        document.getElementById('movies-grid').innerHTML = `
+          <div class="empty-state" style="grid-column: 1/-1;">
+            <div class="icon">⚠️</div>
+            <h3>Failed to Load Movies</h3>
+            <p>Please try again later</p>
+            <button class="btn btn-primary mt-2" onclick="loadMovies()">Retry</button>
+          </div>
+        `;
+      }
+    }
+    
+    function renderMovies(movies) {
+      const grid = document.getElementById('movies-grid');
+      
+      if (!movies || movies.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state" style="grid-column: 1/-1;">
+            <div class="icon">🎬</div>
+            <h3>No Movies Found</h3>
+            <p>Try adjusting your filters</p>
+          </div>
+        `;
+        return;
+      }
+      
+      grid.innerHTML = movies.map(movie => `
+        <div class="card movie-card" onclick="window.location.href='/shows.html?movieId=${movie.id}'">
+          <div class="poster-wrapper">
+            <img 
+  src="${movie.posterUrl || 'https://via.placeholder.com/300x450?text=No+Poster'}"
+  alt="${Utils.escapeHtml(movie.title)}"
+  class="poster"
+  loading="lazy"
+  onerror="this.onerror=null; this.src='https://via.placeholder.com/300x450?text=No+Poster';"
+>
+            <div class="rating">
+              <span class="star">★</span>
+              <span>8.5/10</span>
+            </div>
+          </div>
+          <div class="info">
+            <h3 class="title">${Utils.escapeHtml(movie.title)}</h3>
+            <div class="meta">
+              <span class="tag">${Utils.escapeHtml(movie.genre || 'Drama')}</span>
+              <span class="tag">${Utils.escapeHtml(movie.language || 'English')}</span>
+              ${movie.durationMins ? `<span class="tag">${Utils.formatDuration(movie.durationMins)}</span>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    function setupFilters() {
+      const genreFilter = document.getElementById('genre-filter');
+      const languageFilter = document.getElementById('language-filter');
+      
+      genreFilter.addEventListener('change', applyFilters);
+      languageFilter.addEventListener('change', applyFilters);
+      
+      // Check URL params for initial filter
+      const params = Utils.getUrlParams();
+      if (params.genre) genreFilter.value = params.genre;
+      if (params.language) languageFilter.value = params.language;
+      if (params.search) {
+        document.getElementById('search-input').value = params.search;
+      }
+      
+      applyFilters();
+    }
+    
+    async function applyFilters() {
+      const genre = document.getElementById('genre-filter').value;
+      const language = document.getElementById('language-filter').value;
+      const search = document.getElementById('search-input').value.trim().toLowerCase();
+      
+      let filtered = allMovies;
+      
+      if (genre) {
+        filtered = filtered.filter(m => m.genre && m.genre.toLowerCase() === genre.toLowerCase());
+      }
+      
+      if (language) {
+        filtered = filtered.filter(m => m.language && m.language.toLowerCase() === language.toLowerCase());
+      }
+      
+      if (search) {
+        filtered = filtered.filter(m => 
+          m.title && m.title.toLowerCase().includes(search)
+        );
+      }
+      
+      renderMovies(filtered);
+    }
+    
+    function setupSearch() {
+      const searchInput = document.getElementById('search-input');
+      const debouncedFilter = Utils.debounce(applyFilters, 300);
+      
+      searchInput.addEventListener('input', debouncedFilter);
+      searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          applyFilters();
+        }
+      });
+    }
+  </script>
+</body>
+</html>

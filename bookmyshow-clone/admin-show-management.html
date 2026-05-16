@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Show Management - BookMyShow Admin</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="admin-layout">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="logo">Book<span>MyShow</span></div>
+
+    <nav class="admin-nav">
+      <a href="/admin-dashboard.html">📊 Dashboard</a>
+      <a href="/admin-movie-management.html">🎬 Movies</a>
+      <a href="/admin-theater-management.html">🏢 Theaters</a>
+      <a href="/admin-screen-management.html">📺 Screens</a>
+      <a href="/admin-seat-management.html">💺 Seats</a>
+      <a href="/admin-show-management.html" class="active">🎭 Shows</a>
+      <a href="/admin-booking-view.html">🎟️ Bookings</a>
+      <a href="/admin-users-view.html">👥 Users</a>
+      <div class="dropdown-divider"></div>
+      <a href="/user-dashboard.html">👤 My Profile</a>
+      <a href="#" id="logout-btn">🚪 Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="admin-content">
+
+    <div class="admin-header">
+      <h1>Show Management</h1>
+      <button class="btn btn-primary" onclick="openShowModal()">+ Add Show</button>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="table-container">
+      <div class="table-header">
+        <h3>All Shows</h3>
+
+        <div class="flex gap-2">
+          <select id="movie-filter" class="form-control" style="width: 180px;">
+            <option value="">All Movies</option>
+          </select>
+
+          <select id="theater-filter" class="form-control" style="width: 180px;">
+            <option value="">All Theaters</option>
+          </select>
+
+          <input type="date" id="date-filter" class="form-control" style="width: 180px;">
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <table class="data-table">
+        <thead>
+        <tr>
+          <th>ID</th>
+          <th>Movie</th>
+          <th>Theater</th>
+          <th>Screen</th>
+          <th>Start Time</th>
+          <th>End Time</th>
+
+          <!-- NEW SEAT STATS -->
+          <th>Total Seats</th>
+          <th>Booked Seats</th>
+          <th>Available Seats</th>
+        </tr>
+        </thead>
+
+        <tbody id="shows-table">
+          <tr>
+            <td colspan="9" class="text-center">
+              <div class="spinner"></div>
+            </td>
+          </tr>
+        </tbody>
+
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- ================= SHOW MODAL ================= -->
+<div class="modal-overlay" id="show-modal">
+  <div class="modal">
+
+    <div class="modal-header">
+      <h3 id="show-modal-title">Add Show</h3>
+      <button class="modal-close" onclick="Utils.closeModal('show-modal')">&times;</button>
+    </div>
+
+    <form id="show-form">
+      <div class="modal-body">
+
+        <div class="form-group">
+          <label>Movie *</label>
+          <select id="show-movie" class="form-control" required></select>
+        </div>
+
+        <div class="form-group">
+          <label>Theater *</label>
+          <select id="show-theater" class="form-control" required></select>
+        </div>
+
+        <div class="form-group">
+          <label>Screen *</label>
+          <select id="show-screen" class="form-control" required></select>
+        </div>
+
+        <div class="form-group">
+          <label>Start Time *</label>
+          <input type="datetime-local" id="show-start" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label>End Time *</label>
+          <input type="datetime-local" id="show-end" class="form-control" required>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary"
+                onclick="Utils.closeModal('show-modal')">Cancel</button>
+
+        <button type="submit" class="btn btn-primary">Create Show</button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/auth.js"></script>
+
+<script>
+  let shows = [];
+  let movies = [];
+  let theaters = [];
+  let screens = [];
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!Utils.requireAuth() || !Utils.requireAdmin()) return;
+
+    await loadMovies();
+    await loadTheaters();
+    await loadShows();
+
+    setupFilters();
+    setupForm();
+  });
+
+  // ================= MOVIES =================
+  async function loadMovies() {
+    movies = await API.movies.getAll();
+
+    document.getElementById('show-movie').innerHTML =
+      `<option value="">Select Movie</option>` +
+      movies.map(m => `<option value="${m.id}">${m.title}</option>`).join('');
+
+    document.getElementById('movie-filter').innerHTML =
+      `<option value="">All Movies</option>` +
+      movies.map(m => `<option value="${m.id}">${m.title}</option>`).join('');
+  }
+
+  // ================= THEATERS =================
+  async function loadTheaters() {
+    theaters = await API.theaters.getAll();
+
+    document.getElementById('show-theater').innerHTML =
+      `<option value="">Select Theater</option>` +
+      theaters.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+
+    document.getElementById('theater-filter').innerHTML =
+      `<option value="">All Theaters</option>` +
+      theaters.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  }
+
+  // ================= SCREENS =================
+  async function loadScreens(theaterId) {
+    if (!theaterId) {
+      document.getElementById('show-screen').innerHTML =
+        `<option value="">Select Screen</option>`;
+      return;
+    }
+
+    screens = await API.screens.getByTheater(theaterId);
+
+    document.getElementById('show-screen').innerHTML =
+      `<option value="">Select Screen</option>` +
+      screens.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  }
+
+  // ================= SHOWS =================
+  async function loadShows() {
+    shows = await API.shows.getAll();
+    renderShows(shows);
+  }
+
+  function renderShows(list) {
+  const tbody = document.getElementById('shows-table');
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center">No Shows Found</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(s => {
+
+    const seats = s.showSeats || [];
+
+    const totalSeats = seats.length;
+
+    const bookedSeats = seats.filter(seat => 
+      seat.status === "BOOKED"
+    ).length;
+
+    const availableSeats = seats.filter(seat => 
+      seat.status === "AVAILABLE"
+    ).length;
+
+    return `
+      <tr>
+        <td>${s.id}</td>
+        <td>${s.movie?.title}</td>
+        <td>${s.screen?.theater?.name}</td>
+        <td>${s.screen?.name}</td>
+        <td>${Utils.formatDateTime(s.startTime)}</td>
+        <td>${Utils.formatDateTime(s.endTime)}</td>
+
+        <td>${totalSeats}</td>
+        <td>${bookedSeats}</td>
+        <td>${availableSeats}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+  // ================= FILTERS =================
+  function setupFilters() {
+    document.getElementById('movie-filter').addEventListener('change', applyFilters);
+    document.getElementById('theater-filter').addEventListener('change', applyFilters);
+    document.getElementById('date-filter').addEventListener('change', applyFilters);
+
+    document.getElementById('show-theater').addEventListener('change', e => {
+      loadScreens(e.target.value);
+    });
+  }
+
+  function applyFilters() {
+    let filtered = shows;
+
+    const movieId = document.getElementById('movie-filter').value;
+    const theaterId = document.getElementById('theater-filter').value;
+    const date = document.getElementById('date-filter').value;
+
+    if (movieId) filtered = filtered.filter(s => s.movie?.id == movieId);
+    if (theaterId) filtered = filtered.filter(s => s.screen?.theater?.id == theaterId);
+
+    if (date) {
+      filtered = filtered.filter(s =>
+        new Date(s.startTime).toISOString().split('T')[0] === date
+      );
+    }
+
+    renderShows(filtered);
+  }
+
+  // ================= CREATE SHOW =================
+  function openShowModal() {
+    document.getElementById('show-form').reset();
+    Utils.openModal('show-modal');
+  }
+
+  function setupForm() {
+    document.getElementById('show-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const payload = {
+        movie: { id: document.getElementById('show-movie').value },
+        screen: { id: document.getElementById('show-screen').value },
+        startTime: document.getElementById('show-start').value,
+        endTime: document.getElementById('show-end').value
+      };
+
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = "Saving...";
+
+      try {
+        await API.request('/api/admin/shows', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        Utils.showToast("Show created successfully", "success");
+        Utils.closeModal('show-modal');
+        loadShows();
+
+      } catch (err) {
+        Utils.showToast(err.message || "Error creating show", "error");
+      }
+
+      btn.disabled = false;
+      btn.textContent = "Create Show";
+    });
+  }
+
+</script>
+
+</body>
+</html>

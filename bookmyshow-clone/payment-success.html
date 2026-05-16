@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking Confirmed - BookMyShow</title>
+
+  <link rel="stylesheet" href="css/styles.css">
+
+  <style>
+
+    .success-page {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #0f1020;
+      padding: 40px 20px;
+    }
+
+    .success-card {
+      width: 100%;
+      max-width: 700px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      text-align: center;
+      color: white;
+    }
+
+    .success-icon {
+      width: 90px;
+      height: 90px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      background: #22c55e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 42px;
+      font-weight: bold;
+    }
+
+    .success-card h1 {
+      margin-bottom: 10px;
+      font-size: 40px;
+    }
+
+    .success-card p {
+      color: #a1a1aa;
+      margin-bottom: 30px;
+      line-height: 1.7;
+    }
+
+    .booking-details {
+      background: rgba(255,255,255,0.04);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 30px;
+      text-align: left;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .detail-value {
+      font-weight: 600;
+      text-align: right;
+      word-break: break-word;
+    }
+
+    .text-primary {
+      color: #f84464 !important;
+      font-size: 22px;
+    }
+
+    @media(max-width:768px) {
+
+      .success-card {
+        padding: 25px;
+      }
+
+      .detail-row {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .detail-value {
+        text-align: left;
+      }
+
+      .success-card h1 {
+        font-size: 30px;
+      }
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <div class="success-page">
+
+    <div class="success-card">
+
+      <div class="success-icon">
+        ✓
+      </div>
+
+      <h1>Booking Confirmed!</h1>
+
+      <p>
+        Your tickets have been booked successfully.
+        <br>
+        You will receive a confirmation email shortly.
+      </p>
+
+      <div class="booking-details" id="booking-details">
+
+        <div class="detail-row">
+          <span class="text-gray">
+            Booking Number
+          </span>
+
+          <span class="detail-value" id="booking-number">
+            -
+          </span>
+        </div>
+
+        <div class="detail-row">
+          <span class="text-gray">
+            Movie
+          </span>
+
+          <span class="detail-value" id="movie-name">
+            -
+          </span>
+        </div>
+
+        <div class="detail-row">
+          <span class="text-gray">
+            Theater
+          </span>
+
+          <span class="detail-value" id="theater-name">
+            -
+          </span>
+        </div>
+
+        <div class="detail-row">
+          <span class="text-gray">
+            Screen
+          </span>
+
+          <span class="detail-value" id="screen-name">
+            -
+          </span>
+        </div>
+
+        <div class="detail-row">
+          <span class="text-gray">
+            City
+          </span>
+
+          <span class="detail-value" id="city-name">
+            -
+          </span>
+        </div>
+
+        <div class="detail-row">
+          <span class="text-gray">
+            Show Time
+          </span>
+
+          <span class="detail-value" id="show-time">
+            -
+          </span>
+        </div>
+
+        <div class="detail-row">
+          <span class="text-gray">
+            Seats
+          </span>
+
+          <span class="detail-value" id="seats">
+            -
+          </span>
+        </div>
+
+        <div class="detail-row">
+          <span class="text-gray">
+            Total Amount
+          </span>
+
+          <span id="total-amount"
+                class="detail-value text-primary"
+                style="font-weight:700;">
+            -
+          </span>
+        </div>
+
+      </div>
+
+      <div class="flex gap-2"
+           style="justify-content:center;flex-wrap:wrap;">
+
+        <a href="/user-dashboard.html#bookings"
+           class="btn btn-primary">
+          View My Bookings
+        </a>
+
+        <a href="/movies.html"
+           class="btn btn-secondary">
+          Browse Movies
+        </a>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+
+  <script>
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+      const booking =
+        Utils.getSession('pendingBooking');
+
+      const lastBooking =
+        Utils.getSession('lastBooking');
+
+      console.log(
+        "SUCCESS PAGE BOOKING =",
+        booking
+      );
+
+      if (booking) {
+
+        document.getElementById(
+          'booking-number'
+        ).textContent =
+          booking.bookingNumber || '-';
+
+        document.getElementById(
+          'movie-name'
+        ).textContent =
+          booking.movie || '-';
+
+        document.getElementById(
+          'theater-name'
+        ).textContent =
+          booking.theater || '-';
+
+        document.getElementById(
+          'screen-name'
+        ).textContent =
+          booking.screen || '-';
+
+        document.getElementById(
+          'city-name'
+        ).textContent =
+          booking.city || '-';
+
+        document.getElementById(
+          'show-time'
+        ).textContent =
+          booking.showTime
+            ? Utils.formatDateTime(
+                booking.showTime
+              )
+            : '-';
+
+        document.getElementById(
+          'seats'
+        ).textContent =
+          Array.isArray(booking.seats)
+            ? booking.seats.join(', ')
+            : booking.seats || '-';
+
+        document.getElementById(
+          'total-amount'
+        ).textContent =
+          booking.totalAmount
+            ? Utils.formatCurrency(
+                booking.totalAmount
+              )
+            : '₹0';
+
+        // Clear session after displaying
+        Utils.removeSession(
+          'pendingBooking'
+        );
+
+        Utils.removeSession(
+          'lastBooking'
+        );
+      }
+
+      else if (lastBooking) {
+
+        document.getElementById(
+          'booking-number'
+        ).textContent =
+          lastBooking.bookingNumber || '-';
+
+        document.getElementById(
+          'total-amount'
+        ).textContent =
+          lastBooking.amount
+            ? Utils.formatCurrency(
+                lastBooking.amount
+              )
+            : '₹0';
+
+        Utils.removeSession(
+          'lastBooking'
+        );
+      }
+    });
+
+  </script>
+
+</body>
+</html>

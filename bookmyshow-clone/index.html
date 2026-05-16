@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BookMyShow - Movie Tickets, Plays, Events</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/" class="navbar-brand">
+        <div class="logo">Book<span>MyShow</span></div>
+      </a>
+      
+      <div class="navbar-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Search for Movies, Events, Plays...">
+      </div>
+      
+      <div class="navbar-nav">
+        <a href="/movies.html">Movies</a>
+        
+        <!-- Auth Nav (shown when logged out) -->
+        <div id="auth-nav">
+          <a href="/login.html" class="btn btn-outline btn-sm">Sign In</a>
+        </div>
+        
+        <!-- User Nav (shown when logged in) -->
+        <div id="user-nav" class="hidden">
+          <a href="/admin-dashboard.html" id="admin-nav" class="hidden">Admin</a>
+          <div class="user-menu">
+            <div class="user-avatar" id="user-avatar">U</div>
+            <div class="dropdown-menu">
+              <a href="/user-dashboard.html">👤 My Profile</a>
+              <a href="/user-dashboard.html#bookings">🎟️ My Bookings</a>
+              <div class="dropdown-divider"></div>
+              <button id="logout-btn">🚪 Logout</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-text">
+          <h1>Your Entertainment, <span>One Click Away</span></h1>
+          <p>Book tickets for the latest movies, live events, and plays. Experience entertainment like never before.</p>
+          <a href="/movies.html" class="btn btn-primary btn-lg">Explore Movies</a>
+          
+          <div class="hero-stats">
+            <div class="stat-item">
+              <h3>10K+</h3>
+              <p>Movies</p>
+            </div>
+            <div class="stat-item">
+              <h3>500+</h3>
+              <p>Theaters</p>
+            </div>
+            <div class="stat-item">
+              <h3>50M+</h3>
+              <p>Tickets Booked</p>
+            </div>
+          </div>
+        </div>
+        <div class="hero-image">
+          <!-- Could add illustration here -->
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Now Showing Section -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">🎬 Now Showing</h2>
+        <a href="/movies.html" class="section-link">See All →</a>
+      </div>
+      
+      <div class="movie-grid" id="now-showing-grid">
+        <!-- Movies will be loaded here -->
+        <div class="text-center" style="grid-column: 1/-1; padding: 60px 0;">
+          <div class="spinner" style="width: 40px; height: 40px; border-width: 3px;"></div>
+          <p class="mt-2 text-gray">Loading movies...</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Coming Soon Section -->
+  <section class="section" style="background: var(--darker);">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">🔜 Coming Soon</h2>
+      </div>
+      
+      <div class="movie-grid" id="coming-soon-grid">
+        <!-- Coming soon movies -->
+      </div>
+    </div>
+  </section>
+
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Load movies
+      try {
+        const movies = await API.movies.getAll();
+        const grid = document.getElementById('now-showing-grid');
+        
+        if (!movies || movies.length === 0) {
+          grid.innerHTML = `
+            <div class="empty-state" style="grid-column: 1/-1;">
+              <div class="icon">🎬</div>
+              <h3>No Movies Available</h3>
+              <p>Check back later for new releases!</p>
+            </div>
+          `;
+          return;
+        }
+        
+        grid.innerHTML = movies.slice(0, 8).map(movie => `
+          <div class="card movie-card" onclick="window.location.href='/shows.html?movieId=${movie.id}'">
+            <div class="poster-wrapper">
+              <img src="${movie.posterUrl || '[via.placeholder.com](https://via.placeholder.com/300x450?text=No+Poster)'}" 
+                   alt="${Utils.escapeHtml(movie.title)}" 
+                   class="poster"
+                   onerror="this.src='[via.placeholder.com](https://via.placeholder.com/300x450?text=No+Poster)'">
+              <div class="rating">
+                <span class="star">★</span>
+                <span>8.5/10</span>
+              </div>
+            </div>
+            <div class="info">
+              <h3 class="title">${Utils.escapeHtml(movie.title)}</h3>
+              <div class="meta">
+                <span class="tag">${Utils.escapeHtml(movie.genre || 'Drama')}</span>
+                <span class="tag">${Utils.escapeHtml(movie.language || 'English')}</span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Failed to load movies:', error);
+        document.getElementById('now-showing-grid').innerHTML = `
+          <div class="empty-state" style="grid-column: 1/-1;">
+            <div class="icon">⚠️</div>
+            <h3>Failed to Load Movies</h3>
+            <p>Please try again later</p>
+          </div>
+        `;
+      }
+      
+      // Search functionality
+      const searchInput = document.getElementById('search-input');
+      searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && searchInput.value.trim()) {
+          window.location.href = `/movies.html?search=${encodeURIComponent(searchInput.value.trim())}`;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

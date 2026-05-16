@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Select Show - BookMyShow</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/" class="navbar-brand">
+        <div class="logo">Book<span>MyShow</span></div>
+      </a>
+      
+      <div class="navbar-nav">
+        <a href="/movies.html">Movies</a>
+        
+        <div id="auth-nav">
+          <a href="/login.html" class="btn btn-outline btn-sm">Sign In</a>
+        </div>
+        
+        <div id="user-nav" class="hidden">
+          <a href="/admin-dashboard.html" id="admin-nav" class="hidden">Admin</a>
+          <div class="user-menu">
+            <div class="user-avatar" id="user-avatar">U</div>
+            <div class="dropdown-menu">
+              <a href="/user-dashboard.html">👤 My Profile</a>
+              <a href="/user-dashboard.html#bookings">🎟️ My Bookings</a>
+              <div class="dropdown-divider"></div>
+              <button id="logout-btn">🚪 Logout</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- Movie Info -->
+  <section class="section" style="background: var(--darker); padding: 40px 0;">
+    <div class="container">
+      <div id="movie-info" class="flex gap-3">
+        <div class="text-center" style="width: 100%; padding: 40px 0;">
+          <div class="spinner" style="width: 40px; height: 40px; border-width: 3px;"></div>
+          <p class="mt-2 text-gray">Loading movie details...</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Filters -->
+  <section class="section" style="padding: 20px 0; background: var(--secondary);">
+    <div class="container">
+      <div class="filters" style="margin-bottom: 0;">
+        <div class="filter-group">
+          <label>City</label>
+          <select class="filter-select" id="city-filter">
+            <option value="">All Cities</option>
+            <option value="Mumbai">Mumbai</option>
+            <option value="Delhi">Delhi</option>
+            <option value="Bangalore">Bangalore</option>
+            <option value="Chennai">Chennai</option>
+            <option value="Hyderabad">Hyderabad</option>
+            <option value="Kolkata">Kolkata</option>
+            <option value="Pune">Pune</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label>Date</label>
+          <input type="date" class="filter-select" id="date-filter">
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Shows List -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title mb-3">🎭 Available Shows</h2>
+      
+      <div id="shows-container">
+        <div class="text-center" style="padding: 60px 0;">
+          <div class="spinner" style="width: 40px; height: 40px; border-width: 3px;"></div>
+          <p class="mt-2 text-gray">Loading shows...</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    let movieId = null;
+    let allShows = [];
+    let movie = null;
+    
+    document.addEventListener('DOMContentLoaded', async () => {
+      const params = Utils.getUrlParams();
+      movieId = params.movieId;
+      
+      if (!movieId) {
+        Utils.showToast('No movie selected', 'error');
+        window.location.href = '/movies.html';
+        return;
+      }
+      
+      // Set default date to today
+      document.getElementById('date-filter').valueAsDate = new Date();
+      
+      await loadMovieDetails();
+      await loadShows();
+      setupFilters();
+    });
+    
+    async function loadMovieDetails() {
+      try {
+        movie = await API.movies.getById(movieId);
+        renderMovieInfo(movie);
+      } catch (error) {
+        console.error('Failed to load movie:', error);
+        document.getElementById('movie-info').innerHTML = `
+          <div class="text-center" style="width: 100%;">
+            <p class="text-danger">Failed to load movie details</p>
+          </div>
+        `;
+      }
+    }
+    
+    function renderMovieInfo(movie) {
+      document.getElementById('movie-info').innerHTML = `
+        <img src="${movie.posterUrl || 'https://via.placeholder.com/200x300?text=No+Poster'}"
+             alt="${Utils.escapeHtml(movie.title)}" 
+             style="width: 200px; border-radius: var(--radius-lg);"
+             onerror="this.src='https://via.placeholder.com/200x300?text=No+Poster'"
+        <div class="flex-col gap-2">
+          <h1 style="font-size: 32px;">${Utils.escapeHtml(movie.title)}</h1>
+          <div class="flex gap-2">
+            <span class="status-badge confirmed">${Utils.escapeHtml(movie.genre || 'Drama')}</span>
+            <span class="status-badge pending">${Utils.escapeHtml(movie.language || 'English')}</span>
+            ${movie.durationMins ? `<span class="status-badge pending">${Utils.formatDuration(movie.durationMins)}</span>` : ''}
+          </div>
+          <p class="text-gray mt-2" style="max-width: 600px;">
+            ${Utils.escapeHtml(movie.description || 'No description available.')}
+          </p>
+          ${movie.releaseDate ? `<p class="text-gray">Release Date: ${Utils.formatDate(movie.releaseDate)}</p>` : ''}
+        </div>
+      `;
+      
+      document.title = `${movie.title} - Shows - BookMyShow`;
+    }
+    
+    async function loadShows() {
+      try {
+        allShows = await API.shows.getByMovie(movieId);
+        applyFilters();
+      } catch (error) {
+        console.error('Failed to load shows:', error);
+        document.getElementById('shows-container').innerHTML = `
+          <div class="empty-state">
+            <div class="icon">⚠️</div>
+            <h3>Failed to Load Shows</h3>
+            <p>Please try again later</p>
+            <button class="btn btn-primary mt-2" onclick="loadShows()">Retry</button>
+          </div>
+        `;
+      }
+    }
+    
+    function setupFilters() {
+      document.getElementById('city-filter').addEventListener('change', applyFilters);
+      document.getElementById('date-filter').addEventListener('change', applyFilters);
+    }
+    
+    function applyFilters() {
+      const city = document.getElementById('city-filter').value.toLowerCase();
+      const date = document.getElementById('date-filter').value;
+      
+      let filtered = allShows;
+      
+      if (city) {
+        filtered = filtered.filter(show => 
+          show.screen?.theater?.city?.toLowerCase() === city
+        );
+      }
+      
+      if (date) {
+        filtered = filtered.filter(show => {
+          const showDate = new Date(show.startTime).toISOString().split('T')[0];
+          return showDate === date;
+        });
+      }
+      
+      renderShows(filtered);
+    }
+    
+    function renderShows(shows) {
+      const container = document.getElementById('shows-container');
+      
+      if (!shows || shows.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">🎭</div>
+            <h3>No Shows Available</h3>
+            <p>Try selecting a different date or city</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Group shows by theater
+      const groupedShows = {};
+      shows.forEach(show => {
+        const theaterId = show.screen?.theater?.id || 'unknown';
+        if (!groupedShows[theaterId]) {
+          groupedShows[theaterId] = {
+            theater: show.screen?.theater,
+            screen: show.screen,
+            shows: []
+          };
+        }
+        groupedShows[theaterId].shows.push(show);
+      });
+      
+      container.innerHTML = Object.values(groupedShows).map(group => `
+        <div class="show-card mb-3">
+          <div class="flex-between">
+            <div>
+              <h3 class="theater-name">${Utils.escapeHtml(group.theater?.name || 'Unknown Theater')}</h3>
+              <p class="theater-location">
+                📍 ${Utils.escapeHtml(group.theater?.city || 'Unknown City')} 
+                ${group.theater?.address ? ` - ${Utils.escapeHtml(group.theater.address)}` : ''}
+              </p>
+              <p class="text-gray" style="font-size: 12px; margin-top: 4px;">
+                Screen: ${Utils.escapeHtml(group.screen?.name || 'N/A')}
+              </p>
+            </div>
+          </div>
+          <div class="show-times">
+            ${group.shows.map(show => `
+              <button class="show-time-btn" onclick="selectShow(${show.id})">
+                ${Utils.formatTime(show.startTime)}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    function selectShow(showId) {
+      if (!API.auth.isLoggedIn()) {
+        Utils.showToast('Please login to book tickets', 'warning');
+        setTimeout(() => {
+          window.location.href = `/login.html?redirect=/seat-selection.html?showId=${showId}`;
+        }, 1000);
+        return;
+      }
+      
+      window.location.href = `/seat-selection.html?showId=${showId}`;
+    }
+  </script>
+</body>
+</html>

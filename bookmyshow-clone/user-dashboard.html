@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Dashboard - BookMyShow</title>
+
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container">
+
+      <a href="/" class="navbar-brand">
+        <div class="logo">
+          Book<span>MyShow</span>
+        </div>
+      </a>
+
+      <div class="navbar-nav">
+
+        <a href="/movies.html">Movies</a>
+
+        <a
+          href="/admin-dashboard.html"
+          id="admin-nav"
+          class="hidden"
+        >
+          Admin
+        </a>
+
+        <div class="user-menu">
+
+          <div class="user-avatar" id="user-avatar">
+            U
+          </div>
+
+          <div class="dropdown-menu">
+
+            <a href="/user-dashboard.html" class="active">
+              👤 My Profile
+            </a>
+
+            <a href="#bookings">
+              🎟️ My Bookings
+            </a>
+
+            <div class="dropdown-divider"></div>
+
+            <button id="logout-btn">
+              🚪 Logout
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </nav>
+
+  <!-- Dashboard -->
+  <main class="user-dashboard">
+
+    <div class="container">
+
+      <!-- Header -->
+      <div class="dashboard-header">
+
+        <h1>
+          My Dashboard
+        </h1>
+
+        <p>
+          Manage your profile and view your bookings
+        </p>
+
+      </div>
+
+      <!-- Profile -->
+      <div class="profile-card" id="profile-card">
+
+        <div
+          class="text-center"
+          style="width: 100%; padding: 40px 0;"
+        >
+
+          <div
+            class="spinner"
+            style="
+              width: 40px;
+              height: 40px;
+              border-width: 3px;
+            "
+          ></div>
+
+          <p class="mt-2 text-gray">
+            Loading profile...
+          </p>
+
+        </div>
+
+      </div>
+
+      <!-- BOOKINGS -->
+      <section id="bookings">
+
+        <h2 class="section-title mb-3">
+          🎟️ My Bookings
+        </h2>
+
+        <!-- FILTERS -->
+        <div
+          class="table-header"
+          style="
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 12px;
+          "
+        >
+
+          <input
+            type="text"
+            class="form-control"
+            id="search-booking"
+            placeholder="Search booking # or movie..."
+            style="width: 260px;"
+          >
+
+          <select
+            class="form-control"
+            id="status-filter"
+            style="width: 180px;"
+          >
+
+            <option value="">
+              All Status
+            </option>
+
+            <option value="CONFIRMED">
+              Confirmed
+            </option>
+
+            <option value="PENDING">
+              Pending
+            </option>
+
+            <option value="FAILED">
+              Failed
+            </option>
+
+            <option value="CANCELLED">
+              Cancelled
+            </option>
+
+          </select>
+
+        </div>
+
+        <!-- BOOKING LIST -->
+        <div class="bookings-list" id="bookings-list">
+
+          <div
+            class="text-center"
+            style="padding: 60px 0;"
+          >
+
+            <div
+              class="spinner"
+              style="
+                width: 40px;
+                height: 40px;
+                border-width: 3px;
+              "
+            ></div>
+
+            <p class="mt-2 text-gray">
+              Loading bookings...
+            </p>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- EDIT PROFILE MODAL -->
+  <div class="modal-overlay" id="edit-profile-modal">
+
+    <div class="modal">
+
+      <div class="modal-header">
+
+        <h3>
+          Edit Profile
+        </h3>
+
+        <button
+          class="modal-close"
+          onclick="Utils.closeModal('edit-profile-modal')"
+        >
+          &times;
+        </button>
+
+      </div>
+
+      <form id="edit-profile-form">
+
+        <div class="modal-body">
+
+          <div class="form-group">
+
+            <label for="edit-name">
+              Full Name
+            </label>
+
+            <input
+              type="text"
+              id="edit-name"
+              name="name"
+              class="form-control"
+              required
+            >
+
+          </div>
+
+          <div class="form-group">
+
+            <label for="edit-phone">
+              Phone Number
+            </label>
+
+            <input
+              type="tel"
+              id="edit-phone"
+              name="phoneNumber"
+              class="form-control"
+              required
+            >
+
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+
+          <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="Utils.closeModal('edit-profile-modal')"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+          >
+            Save Changes
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+
+    let currentUser = null;
+    let allBookings = [];
+
+    // ==========================================
+    // PAGE LOAD
+    // ==========================================
+
+    document.addEventListener('DOMContentLoaded', async () => {
+
+      if (!Utils.requireAuth()) return;
+
+      if (API.auth.isAdmin()) {
+
+        document
+          .getElementById('admin-nav')
+          .classList.remove('hidden');
+      }
+
+      await loadProfile();
+
+      await loadBookings();
+
+      setupEditForm();
+
+      setupBookingFilters();
+
+    });
+
+    // ==========================================
+    // LOAD PROFILE
+    // ==========================================
+
+    async function loadProfile() {
+
+      try {
+
+        currentUser =
+          await API.users.getProfile();
+
+        renderProfile(currentUser);
+
+      } catch (error) {
+
+        console.error(error);
+
+        document.getElementById(
+          'profile-card'
+        ).innerHTML = `
+
+          <div class="text-center">
+
+            <p class="text-danger">
+              Failed to load profile
+            </p>
+
+          </div>
+
+        `;
+      }
+    }
+
+    // ==========================================
+    // RENDER PROFILE
+    // ==========================================
+
+    function renderProfile(user) {
+
+      document.getElementById(
+        'profile-card'
+      ).innerHTML = `
+
+        <div class="profile-avatar">
+          ${Utils.getInitials(user.name || user.email)}
+        </div>
+
+        <div class="profile-info">
+
+          <h2>
+            ${Utils.escapeHtml(user.name || 'User')}
+          </h2>
+
+          <p class="email">
+            ${Utils.escapeHtml(user.email)}
+          </p>
+
+          ${
+            user.phoneNumber
+            ? `
+              <p class="text-gray mb-2">
+                📱 ${Utils.escapeHtml(user.phoneNumber)}
+              </p>
+            `
+            : ''
+          }
+
+          <span class="badge">
+            ${user.role || 'USER'}
+          </span>
+
+        </div>
+
+        <div style="margin-left:auto;">
+
+          <button
+            class="btn btn-outline"
+            onclick="openEditProfile()"
+          >
+            Edit Profile
+          </button>
+
+        </div>
+
+      `;
+
+      document.getElementById(
+        'user-avatar'
+      ).textContent =
+        Utils.getInitials(user.name || user.email);
+    }
+
+    // ==========================================
+    // OPEN EDIT PROFILE
+    // ==========================================
+
+    function openEditProfile() {
+
+      if (!currentUser) return;
+
+      document.getElementById('edit-name').value =
+        currentUser.name || '';
+
+      document.getElementById('edit-phone').value =
+        currentUser.phoneNumber || '';
+
+      Utils.openModal('edit-profile-modal');
+    }
+
+    // ==========================================
+    // EDIT PROFILE FORM
+    // ==========================================
+
+    function setupEditForm() {
+
+      document.getElementById(
+        'edit-profile-form'
+      ).addEventListener(
+        'submit',
+        async (e) => {
+
+          e.preventDefault();
+
+          const name =
+            document.getElementById('edit-name')
+              .value.trim();
+
+          const phoneNumber =
+            document.getElementById('edit-phone')
+              .value.trim();
+
+          try {
+
+            await API.users.update(
+              currentUser.id,
+              {
+                name,
+                phoneNumber
+              }
+            );
+
+            Utils.showToast(
+              'Profile updated successfully',
+              'success'
+            );
+
+            Utils.closeModal(
+              'edit-profile-modal'
+            );
+
+            await loadProfile();
+
+          } catch (error) {
+
+            Utils.showToast(
+              error.message || 'Failed to update profile',
+              'error'
+            );
+          }
+        }
+      );
+    }
+
+    // ==========================================
+    // LOAD BOOKINGS
+    // ==========================================
+
+    async function loadBookings() {
+
+      try {
+
+        allBookings =
+          await API.bookings.getMyBookings();
+
+        renderBookings(allBookings);
+
+      } catch (error) {
+
+        console.error(error);
+
+        document.getElementById(
+          'bookings-list'
+        ).innerHTML = `
+
+          <div class="empty-state">
+
+            <div class="icon">
+              ⚠️
+            </div>
+
+            <h3>
+              Failed to load bookings
+            </h3>
+
+          </div>
+
+        `;
+      }
+    }
+
+    // ==========================================
+    // RENDER BOOKINGS
+    // ==========================================
+
+    function renderBookings(bookings) {
+
+      const container =
+        document.getElementById('bookings-list');
+
+      if (!bookings || bookings.length === 0) {
+
+        container.innerHTML = `
+
+          <div class="empty-state">
+
+            <div class="icon">
+              🎟️
+            </div>
+
+            <h3>
+              No Bookings Found
+            </h3>
+
+            <p>
+              Start booking your favorite movies
+            </p>
+
+            <a
+              href="/movies.html"
+              class="btn btn-primary mt-2"
+            >
+              Browse Movies
+            </a>
+
+          </div>
+
+        `;
+
+        return;
+      }
+
+      container.innerHTML = bookings.map(booking => `
+
+        <div class="booking-card">
+
+          <img
+            src="${
+              booking.show?.movie?.posterUrl
+              || 'https://via.placeholder.com/140x200?text=No+Poster'
+            }"
+
+            alt="${
+              Utils.escapeHtml(
+                booking.show?.movie?.title || 'Movie'
+              )
+            }"
+
+            class="poster"
+
+            onerror="this.src='https://via.placeholder.com/140x200?text=No+Poster'"
+          >
+
+          <div class="details">
+
+            <h3 class="movie-title">
+
+              ${
+                Utils.escapeHtml(
+                  booking.show?.movie?.title || 'Movie'
+                )
+              }
+
+            </h3>
+
+            <div class="booking-meta">
+
+              <span>
+                📅 ${
+                  booking.show?.startTime
+                  ? Utils.formatDateTime(
+                      booking.show.startTime
+                    )
+                  : 'N/A'
+                }
+              </span>
+
+              <span>
+                🎭 ${
+                  Utils.escapeHtml(
+                    booking.show?.screen?.theater?.name
+                    || 'Theater'
+                  )
+                }
+              </span>
+
+              <span>
+                📍 ${
+                  Utils.escapeHtml(
+                    booking.show?.screen?.theater?.city
+                    || 'City'
+                  )
+                }
+              </span>
+
+            </div>
+
+            <!-- SEATS -->
+            <div class="seats">
+
+              ${(booking.seats || []).map(seat => `
+
+                <span class="seat-tag">
+
+                  ${
+                    Utils.escapeHtml(
+                      seat.seat?.seatNumber
+                      || seat.seatNumber
+                      || 'N/A'
+                    )
+                  }
+
+                </span>
+
+              `).join('')}
+
+            </div>
+
+            <!-- STATUS -->
+            <div class="mt-2">
+
+              <span class="status-badge ${booking.status?.toLowerCase() || 'pending'}">
+
+                ${booking.status || 'PENDING'}
+
+              </span>
+
+              <span
+                class="text-gray"
+                style="margin-left:12px;"
+              >
+
+                Booking #${booking.bookingNumber || 'N/A'}
+
+              </span>
+
+            </div>
+
+          </div>
+
+          <!-- RIGHT -->
+          <div class="actions">
+
+            <div class="text-right mb-2">
+
+              <span class="text-gray">
+                Total
+              </span>
+
+              <p style="
+                font-size:20px;
+                font-weight:700;
+                color:var(--primary);
+              ">
+
+                ${
+                  Utils.formatCurrency(
+                    booking.totalAmount || 0
+                  )
+                }
+
+              </p>
+
+            </div>
+
+            ${
+  (() => {
+
+    const showStartTime = booking.show?.startTime
+      ? new Date(booking.show.startTime)
+      : null;
+
+    const currentTime = new Date();
+
+    const canCancel =
+      booking.status === 'CONFIRMED'
+      &&
+      showStartTime
+      &&
+      currentTime < showStartTime;
+
+    if (canCancel) {
+
+      return `
+        <button
+          class="btn btn-danger btn-sm"
+          onclick="cancelBooking(${booking.id})"
+        >
+          Cancel Booking
+        </button>
+      `;
+    }
+
+    // If movie already started
+    if (
+      booking.status === 'CONFIRMED'
+      &&
+      showStartTime
+      &&
+      currentTime >= showStartTime
+    ) {
+
+      return `
+        <button
+          class="btn btn-secondary btn-sm"
+          disabled
+          style="
+            cursor: not-allowed;
+            opacity: 0.7;
+          "
+        >
+          Show Started
+        </button>
+      `;
+    }
+
+    return '';
+
+  })()
+}
+
+          </div>
+
+        </div>
+
+      `).join('');
+    }
+
+    // ==========================================
+    // FILTERS
+    // ==========================================
+
+    function setupBookingFilters() {
+
+      const searchInput =
+        document.getElementById('search-booking');
+
+      const statusFilter =
+        document.getElementById('status-filter');
+
+      const applyFilters = () => {
+
+        const search =
+          searchInput.value
+            .trim()
+            .toLowerCase();
+
+        const status =
+          statusFilter.value;
+
+        let filtered = [...allBookings];
+
+        // SEARCH
+        if (search) {
+
+          filtered = filtered.filter(booking =>
+
+            booking.bookingNumber
+              ?.toLowerCase()
+              .includes(search)
+
+            ||
+
+            booking.show?.movie?.title
+              ?.toLowerCase()
+              .includes(search)
+          );
+        }
+
+        // STATUS
+        if (status) {
+
+          filtered = filtered.filter(
+            booking => booking.status === status
+          );
+        }
+
+        renderBookings(filtered);
+      };
+
+      searchInput.addEventListener(
+        'input',
+        Utils.debounce(applyFilters, 300)
+      );
+
+      statusFilter.addEventListener(
+        'change',
+        applyFilters
+      );
+    }
+
+    // ==========================================
+    // CANCEL BOOKING
+    // ==========================================
+
+    async function cancelBooking(bookingId) {
+
+      const confirmed =
+        await Utils.confirm(
+          'Are you sure you want to cancel this booking?',
+          'Cancel Booking'
+        );
+
+      if (!confirmed) return;
+
+      Utils.showLoader(
+        'Cancelling booking...'
+      );
+
+      try {
+
+        await API.bookings.cancel(
+          bookingId
+        );
+
+        Utils.hideLoader();
+
+        Utils.showToast(
+          'Booking cancelled successfully',
+          'success'
+        );
+
+        await loadBookings();
+
+      } catch (error) {
+
+        Utils.hideLoader();
+
+        Utils.showToast(
+          error.message || 'Failed to cancel booking',
+          'error'
+        );
+      }
+    }
+
+  </script>
+
+</body>
+</html>

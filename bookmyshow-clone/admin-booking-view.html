@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bookings - BookMyShow Admin</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="logo">Book<span>MyShow</span></div>
+      
+      <nav class="admin-nav">
+        <a href="/admin-dashboard.html">📊 Dashboard</a>
+        <a href="/admin-movie-management.html">🎬 Movies</a>
+        <a href="/admin-theater-management.html">🏢 Theaters</a>
+        <a href="/admin-screen-management.html">📺 Screens</a>
+        <a href="/admin-seat-management.html">💺 Seats</a>
+        <a href="/admin-show-management.html">🎭 Shows</a>
+        <a href="/admin-booking-view.html" class="active">🎟️ Bookings</a>
+        <a href="/admin-users-view.html">👥 Users</a>
+        <div class="dropdown-divider"></div>
+        <a href="/user-dashboard.html">👤 My Profile</a>
+        <a href="#" id="logout-btn">🚪 Logout</a>
+      </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="admin-content">
+      <div class="admin-header">
+        <h1>All Bookings</h1>
+      </div>
+      
+      <!-- Bookings Table -->
+      <div class="table-container">
+        <div class="table-header">
+          <h3>Booking Records</h3>
+          <div class="flex gap-2">
+            <input type="text" class="form-control" id="search-booking" 
+                   placeholder="Search by booking #..." style="width: 200px;">
+            <select class="form-control" id="status-filter" style="width: 150px;">
+              <option value="">All Status</option>
+              <option value="CONFIRMED">Confirmed</option>
+              <option value="PENDING">Pending</option>
+              <option value="CANCELLED">Cancelled</option>
+              <option value="FAILED">Failed</option>
+            </select>
+          </div>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Booking #</th>
+              <th>User</th>
+              <th>Movie</th>
+              <th>Theater</th>
+              <th>Seats</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="bookings-table">
+            <tr>
+              <td colspan="9" class="text-center">
+                <div class="spinner" style="margin: 20px auto;"></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    let allBookings = [];
+    
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!Utils.requireAuth()) return;
+      if (!Utils.requireAdmin()) return;
+      
+      await loadBookings();
+      setupFilters();
+    });
+    
+    async function loadBookings() {
+      try {
+        allBookings = await API.bookings.getAll();
+        renderBookings(allBookings);
+      } catch (error) {
+        console.error('Failed to load bookings:', error);
+        document.getElementById('bookings-table').innerHTML = `
+          <tr>
+            <td colspan="9" class="text-center text-danger">Failed to load bookings</td>
+          </tr>
+        `;
+      }
+    }
+    
+    function renderBookings(bookings) {
+      const tbody = document.getElementById('bookings-table');
+      
+      if (!bookings || bookings.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" class="text-center text-gray">No bookings found</td>
+          </tr>
+        `;
+        return;
+      }
+      
+      tbody.innerHTML = bookings.map(booking => `
+        <tr>
+          <td><strong>${booking.bookingNumber || 'N/A'}</strong></td>
+          <td>${Utils.escapeHtml(booking.user?.email || 'N/A')}</td>
+          <td>${Utils.escapeHtml(booking.show?.movie?.title || 'N/A')}</td>
+          <td>${Utils.escapeHtml(booking.show?.screen?.theater?.name || 'N/A')}</td>
+          <td>${(booking.seats || []).map(s => s.seat?.seatNumber || s.seatNumber || '?').join(', ')}</td>
+          <td>${Utils.formatCurrency(booking.totalAmount || 0)}</td>
+          <td><span class="status-badge ${booking.status?.toLowerCase() || 'pending'}">${booking.status || 'PENDING'}</span></td>
+          <td>${booking.bookingTime ? Utils.formatDate(booking.bookingTime) : 'N/A'}</td>
+          <td>
+            <div class="action-btns">
+              <button class="action-btn view" onclick="viewBooking(${booking.id})" title="View Details">👁️</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+    
+    function setupFilters() {
+      const searchInput = document.getElementById('search-booking');
+      const statusFilter = document.getElementById('status-filter');
+      
+      const applyFilters = () => {
+        const search = searchInput.value.trim().toLowerCase();
+        const status = statusFilter.value;
+        
+        let filtered = allBookings;
+        
+        if (search) {
+          filtered = filtered.filter(b => 
+            b.bookingNumber?.toLowerCase().includes(search) ||
+            b.user?.email?.toLowerCase().includes(search)
+          );
+        }
+        
+        if (status) {
+          filtered = filtered.filter(b => b.status === status);
+        }
+        
+        renderBookings(filtered);
+      };
+      
+      searchInput.addEventListener('input', Utils.debounce(applyFilters, 300));
+      statusFilter.addEventListener('change', applyFilters);
+    }
+    
+    async function viewBooking(id) {
+      try {
+        const booking = await API.bookings.getById(id);
+        
+        // Show booking details in alert (could be a modal)
+        const details = `
+Booking Number: ${booking.bookingNumber}
+User: ${booking.user?.email}
+Movie: ${booking.show?.movie?.title}
+Theater: ${booking.show?.screen?.theater?.name}
+Screen: ${booking.show?.screen?.name}
+Show Time: ${booking.show?.startTime ? Utils.formatDateTime(booking.show.startTime) : 'N/A'}
+Seats: ${(booking.seats || []).map(s => s.seat?.seatNumber || s.seatNumber).join(', ')}
+Amount: ${Utils.formatCurrency(booking.totalAmount || 0)}
+Status: ${booking.status}
+Booking Time: ${booking.bookingTime ? Utils.formatDateTime(booking.bookingTime) : 'N/A'}
+        `.trim();
+        
+        alert(details);
+      } catch (error) {
+        Utils.showToast('Failed to load booking details', 'error');
+      }
+    }
+  </script>
+</body>
+</html>
