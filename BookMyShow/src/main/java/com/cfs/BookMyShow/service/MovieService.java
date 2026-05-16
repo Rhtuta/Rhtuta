@@ -66,7 +66,6 @@ public class MovieService {
     {
         Movie movie = movieRepository.findById(id)
                         .orElseThrow(()-> new ResourceNotFoundException("Movie not found with id:- "+id));
-        movie.setId(movieDto.getId());
         movie.setDescription(movieDto.getDescription());
         movie.setGenre(movieDto.getGenre());
         movie.setTitle(movieDto.getTitle());

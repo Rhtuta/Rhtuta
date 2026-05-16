@@ -31,6 +31,6 @@ public class ShowSeat {
     private Show show;
 
     @ManyToOne
-    @JoinColumn(name = "booking_id",nullable = false)
+    @JoinColumn(name = "booking_id")
     private Booking booking;
 }

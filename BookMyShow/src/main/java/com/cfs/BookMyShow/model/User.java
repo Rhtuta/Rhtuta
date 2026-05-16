@@ -27,9 +27,12 @@ public class User {
     @Column(nullable = false)
     private String phoneNumber;
 
-    @Column(nullable = false)
     private String password;
 
     @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
     private List<Booking> bookings;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
 }

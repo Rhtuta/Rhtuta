@@ -4,6 +4,7 @@ import com.cfs.BookMyShow.dto.UserDto;
 import com.cfs.BookMyShow.exception.ResourceNotFoundException;
 import com.cfs.BookMyShow.model.User;
 import com.cfs.BookMyShow.repository.UserRepository;
+import com.cfs.BookMyShow.security.AuthUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,62 +17,78 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    public UserDto createUser(UserDto userDto)
-    {
-        User user = mapToEntity(userDto);
-        User savedUser = userRepository.save(user);
-        return mapToDto(savedUser);
-    }
+    // GET USER BY ID (ADMIN USE)
+    public UserDto getUserById(Long id) {
 
-    public UserDto getUserById(Long id)
-    {
         User user = userRepository.findById(id)
-                .orElseThrow(()->new ResourceNotFoundException("User not found with id:- "+id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found with id:- " + id));
+
         return mapToDto(user);
     }
 
-    public List<UserDto> getAllUsers()
-    {
-        List<User> users = userRepository.findAll();
-        return users.stream()
+    // GET MY PROFILE (USER ONLY)
+    public UserDto getMyProfile() {
+
+        String email = AuthUtil.getLoggedInUserEmail();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
+
+        return mapToDto(user);
+    }
+
+    // GET ALL USERS (ADMIN ONLY)
+    public List<UserDto> getAllUsers() {
+
+        return userRepository.findAll()
+                .stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
-    public UserDto updateUser(Long id,UserDto userDto)
-    {
+    // UPDATE USER (SELF UPDATE OR ADMIN)
+    public UserDto updateUser(Long id, UserDto userDto) {
+
         User user = userRepository.findById(id)
-                .orElseThrow(()->new ResourceNotFoundException("User not found with id:- "+id));
-        user.setId(userDto.getId());
-        user.setName(userDto.getEmail());
-        user.setEmail(userDto.getEmail());
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found with id:- " + id));
+
+        String loggedInEmail = AuthUtil.getLoggedInUserEmail();
+
+        if (!user.getEmail().equals(loggedInEmail)) {
+            throw new RuntimeException("Access denied: You can only update your own profile");
+        }
+
+        user.setName(userDto.getName());
         user.setPhoneNumber(userDto.getPhoneNumber());
+
         User updatedUser = userRepository.save(user);
+
         return mapToDto(updatedUser);
     }
 
-    public void deleteUser(Long id)
-    {
+    // DELETE USER (ADMIN ONLY)
+    public void deleteUser(Long id) {
+
         User user = userRepository.findById(id)
-                .orElseThrow(()->new ResourceNotFoundException("User not found with id:- "+id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found with id:- " + id));
+
         userRepository.delete(user);
     }
 
-    private UserDto mapToDto(User savedUser) {
-        UserDto userDto = new UserDto();
-        userDto.setId(savedUser.getId());
-        userDto.setName(savedUser.getName());
-        userDto.setEmail(savedUser.getEmail());
-        userDto.setPhoneNumber(savedUser.getPhoneNumber());
-        return userDto;
-    }
+    // MAPPING METHOD
+    private UserDto mapToDto(User user) {
 
-    private User mapToEntity(UserDto userDto) {
-        User user = new User();
-        user.setId(userDto.getId());
-        user.setName(userDto.getEmail());
-        user.setEmail(userDto.getEmail());
-        user.setPhoneNumber(userDto.getPhoneNumber());
-        return user;
+        UserDto dto = new UserDto();
+
+        dto.setId(user.getId());
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+        dto.setPhoneNumber(user.getPhoneNumber());
+
+        return dto;
     }
 }

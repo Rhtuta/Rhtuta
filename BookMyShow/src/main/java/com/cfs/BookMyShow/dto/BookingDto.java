@@ -20,4 +20,7 @@ public class BookingDto {
     private ShowDto show;
     private List<ShowSeatDto> seats;
     private PaymentDto payment;
+    private String razorpayOrderId;
+    private String razorpayKey;
+    private Double razorpayAmount;
 }

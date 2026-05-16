@@ -49,7 +49,7 @@ public class TheaterService {
     {
         Theater theater = theaterRepository.findById(id)
                 .orElseThrow(()-> new ResourceNotFoundException("Theater not found with id: "+id));
-        theater.setId(theaterDto.getId());
+
         theater.setName(theaterDto.getName());
         theater.setCity(theaterDto.getCity());
         theater.setAddress(theaterDto.getAddress());
@@ -76,7 +76,6 @@ public class TheaterService {
 
     private Theater mapToEntity(TheaterDto theaterDto) {
         Theater theater = new Theater();
-        theater.setId(theaterDto.getId());
         theater.setCity(theaterDto.getCity());
         theater.setName(theaterDto.getName());
         theater.setAddress(theaterDto.getAddress());

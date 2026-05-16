@@ -12,4 +12,5 @@ import java.util.Optional;
 public interface ScreenRepository extends JpaRepository<Screen,Long>
 {
     List<Screen> findByTheaterId(Long theaterId);
+    long countByTheaterId(Long theaterId);
 }

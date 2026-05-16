@@ -1,7 +1,6 @@
 package com.cfs.BookMyShow.repository;
 
-import com.cfs.BookMyShow.model.Movie;
-import com.cfs.BookMyShow.model.Seat;
+
 import com.cfs.BookMyShow.model.Show;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

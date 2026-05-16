@@ -18,16 +18,16 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false,unique = true)
-    private String transactionId;
+    private String orderId;
+
+    private String paymentId;
 
     @Column(nullable = false)
-    private LocalDateTime paymentTime;
+    private LocalDateTime createAt;
 
     @Column(nullable = false)
     private Double amount;
 
-    @Column(nullable = false)
     private String paymentMethod;
 
     @Column(nullable = false)
@@ -36,5 +36,7 @@ public class Payment {
     @OneToOne(mappedBy = "payment")
     private Booking booking;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 }
-

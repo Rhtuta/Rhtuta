@@ -1,5 +1,6 @@
 package com.cfs.BookMyShow.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -26,18 +27,26 @@ public class Show {
     private LocalDateTime endTime;
 
     @ManyToOne
-    @JoinColumn(name = "screen_id",nullable = false)
+    @JoinColumn(name = "screen_id", nullable = false)
     private Screen screen;
 
     @ManyToOne
-    @JoinColumn(name = "movie_id",nullable = false)
+    @JoinColumn(name = "movie_id", nullable = false)
     private Movie movie;
 
-    @OneToMany(mappedBy = "show",cascade = CascadeType.ALL)
+    @JsonIgnore
+    @OneToMany(
+            mappedBy = "show",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
     private List<ShowSeat> showSeats;
 
-    @OneToMany(mappedBy = "show",cascade = CascadeType.ALL)
+    @JsonIgnore
+    @OneToMany(
+            mappedBy = "show",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
     private List<Booking> bookings;
-
-
 }
